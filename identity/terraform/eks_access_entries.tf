@@ -1,39 +1,79 @@
-data "aws_iam_roles" "namespace_team_permission_set_role_octo_nonlive" {
-  for_each = local.namespace_team_cluster_assignments_octo_nonlive
-  provider = aws.octo-nonlive-eks-access
+module "namespace_team_eks_access_entries_octo_nonlive" {
+  for_each = local.namespace_access_teams
+  source   = "./modules/eks_access_entries"
 
-  name_regex  = "^AWSReservedSSO_${local.namespace_team_permission_set_names[each.value.team]}_[A-Za-z0-9]+$"
-  path_prefix = "/aws-reserved/sso.amazonaws.com/"
+  providers = {
+    aws.eks_access = aws.octo-nonlive-eks-access
+  }
 
-  depends_on = [aws_ssoadmin_account_assignment.namespace_team_cluster]
+  permission_set_name = local.namespace_team_permission_set_names[each.key]
+  assignments = {
+    for key, assignment in local.namespace_team_access_assignments_octo_nonlive :
+    key => {
+      cluster          = assignment.cluster
+      kubernetes_group = assignment.kubernetes_group
+    }
+    if assignment.kubernetes_group == each.key
+  }
+
+  depends_on = [module.namespace_team_readonly_eks]
 }
 
-data "aws_iam_roles" "namespace_team_permission_set_role_octo_live" {
-  for_each = local.namespace_team_cluster_assignments_octo_live
-  provider = aws.octo-live-eks-access
+module "namespace_team_eks_access_entries_octo_live" {
+  for_each = local.namespace_access_teams
+  source   = "./modules/eks_access_entries"
 
-  name_regex  = "^AWSReservedSSO_${local.namespace_team_permission_set_names[each.value.team]}_[A-Za-z0-9]+$"
-  path_prefix = "/aws-reserved/sso.amazonaws.com/"
+  providers = {
+    aws.eks_access = aws.octo-live-eks-access
+  }
 
-  depends_on = [aws_ssoadmin_account_assignment.namespace_team_cluster]
+  permission_set_name = local.namespace_team_permission_set_names[each.key]
+  assignments = {
+    for key, assignment in local.namespace_team_access_assignments_octo_live :
+    key => {
+      cluster          = assignment.cluster
+      kubernetes_group = assignment.kubernetes_group
+    }
+    if assignment.kubernetes_group == each.key
+  }
+
+  depends_on = [module.namespace_team_readonly_eks]
 }
 
-resource "aws_eks_access_entry" "namespace_team_octo_nonlive" {
-  for_each = local.namespace_team_cluster_assignments_octo_nonlive
-  provider = aws.octo-nonlive-eks-access
+module "cp_user_eks_access_entries_octo_nonlive" {
+  source = "./modules/eks_access_entries"
 
-  cluster_name      = each.value.cluster
-  principal_arn     = one(data.aws_iam_roles.namespace_team_permission_set_role_octo_nonlive[each.key].arns)
-  kubernetes_groups = [each.value.team]
-  type              = "STANDARD"
+  providers = {
+    aws.eks_access = aws.octo-nonlive-eks-access
+  }
+
+  permission_set_name = "cp-user-eks-readonly"
+  assignments = {
+    for key, assignment in local.cp_user_access_assignments_octo_nonlive :
+    key => {
+      cluster          = assignment.cluster
+      kubernetes_group = assignment.kubernetes_group
+    }
+  }
+
+  depends_on = [module.cp_user_eks_readonly_for_cp_engineers]
 }
 
-resource "aws_eks_access_entry" "namespace_team_octo_live" {
-  for_each = local.namespace_team_cluster_assignments_octo_live
-  provider = aws.octo-live-eks-access
+module "cp_user_eks_access_entries_octo_live" {
+  source = "./modules/eks_access_entries"
 
-  cluster_name      = each.value.cluster
-  principal_arn     = one(data.aws_iam_roles.namespace_team_permission_set_role_octo_live[each.key].arns)
-  kubernetes_groups = [each.value.team]
-  type              = "STANDARD"
+  providers = {
+    aws.eks_access = aws.octo-live-eks-access
+  }
+
+  permission_set_name = "cp-user-eks-readonly"
+  assignments = {
+    for key, assignment in local.cp_user_access_assignments_octo_live :
+    key => {
+      cluster          = assignment.cluster
+      kubernetes_group = assignment.kubernetes_group
+    }
+  }
+
+  depends_on = [module.cp_user_eks_readonly_for_cp_engineers]
 }

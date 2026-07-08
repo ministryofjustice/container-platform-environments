@@ -1,0 +1,40 @@
+name: Identity Plan
+
+on:
+  pull_request:
+    paths:
+      - "identity/terraform/**"
+      - "identity/modules/**"
+      - ".github/workflows/identity-plan.yml"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  plan:
+    name: Identity Plan
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    defaults:
+      run:
+        working-directory: ./identity/terraform
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37 # v6.1.0
+        with:
+          role-to-assume: arn:aws:iam::${{secrets.CLOUD_PLATFORM_LIVE_ACCOUNT_ID}}:role/github-actions-container-platform-identity-plan
+          role-session-name: GitHubActionsContainerPlatformIdentityPlan
+          aws-region: eu-west-2
+      - uses: hashicorp/setup-terraform@5e8dbf3c6d9deaf4193ca7a8fb23f2ac83bb6c85 # v4.0.0
+        with:
+          terraform_version: 1.14.8
+      - run: terraform init
+      - run: terraform validate -no-color
+
+      - name: Terraform plan
+        id: plan
+        run: |
+          set -o pipefail
+          terraform plan -detailed-exitcode | ../../scripts/redaction.sh
