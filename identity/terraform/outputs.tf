@@ -1,4 +1,1 @@
-output "namespaces_debug" {
-  description = "Temporary debug output for aggregated namespace manifests"
-  value       = local.namespaces
-}
+# Debug output removed to avoid persisting aggregated namespace manifests in Terraform state and CI logs.
