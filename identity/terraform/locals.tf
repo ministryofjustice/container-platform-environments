@@ -1,12 +1,12 @@
-# This data sources allows us to get the Modernisation Platform account information for use elsewhere
-data "aws_caller_identity" "modernisation-platform" {
+# Caller identity for the currently assumed role (used to detect plan/apply role)
+data "aws_caller_identity" "current" {
 }
 
 locals {
 
-  modernisation_platform_account = data.aws_caller_identity.modernisation-platform
-  environment_management         = jsondecode(data.aws_secretsmanager_secret_version.environment_management.secret_string)
-  caller_arn                     = local.modernisation_platform_account.arn
+  caller_identity             = data.aws_caller_identity.current
+  environment_management      = jsondecode(data.aws_secretsmanager_secret_version.environment_management.secret_string)
+  caller_arn                  = local.caller_identity.arn
 
   # Use readonly for plan runs and administrator for apply runs.
   is_identity_plan_role  = can(regex("assumed-role/github-actions-container-platform-identity-plan/", local.caller_arn))
