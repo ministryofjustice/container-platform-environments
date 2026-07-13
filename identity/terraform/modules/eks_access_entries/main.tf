@@ -22,7 +22,14 @@ resource "aws_eks_access_entry" "this" {
   provider = aws.eks_access
 
   cluster_name      = each.value.cluster
-  principal_arn     = one(data.aws_iam_roles.permission_set_role[each.key].arns)
+  principal_arn     = length(data.aws_iam_roles.permission_set_role[each.key].arns) == 1 ? data.aws_iam_roles.permission_set_role[each.key].arns[0] : ""
   kubernetes_groups = [each.value.kubernetes_group]
   type              = "STANDARD"
+
+  lifecycle {
+    precondition {
+      condition     = length(data.aws_iam_roles.permission_set_role[each.key].arns) == 1
+      error_message = "Expected exactly one AWSReservedSSO role for permission set '${var.permission_set_name}' in this account. Ensure the permission set is provisioned to the target account before applying."
+    }
+  }
 }
