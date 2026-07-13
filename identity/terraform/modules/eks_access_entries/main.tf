@@ -22,7 +22,7 @@ resource "aws_eks_access_entry" "this" {
   provider = aws.eks_access
 
   cluster_name      = each.value.cluster
-  principal_arn     = length(data.aws_iam_roles.permission_set_role[each.key].arns) == 1 ? data.aws_iam_roles.permission_set_role[each.key].arns[0] : ""
+  principal_arn     = one(data.aws_iam_roles.permission_set_role[each.key].arns)
   kubernetes_groups = [each.value.kubernetes_group]
   type              = "STANDARD"
 
