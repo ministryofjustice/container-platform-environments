@@ -1,0 +1,35 @@
+terraform {
+  required_providers {
+    aws = {
+      source = "hashicorp/aws"
+      configuration_aliases = [
+        aws.eks_access,
+      ]
+    }
+  }
+}
+
+data "aws_iam_roles" "permission_set_role" {
+  for_each = var.assignments
+  provider = aws.eks_access
+
+  name_regex  = "^AWSReservedSSO_${var.permission_set_name}_[A-Za-z0-9]+$"
+  path_prefix = "/aws-reserved/sso.amazonaws.com/"
+}
+
+resource "aws_eks_access_entry" "this" {
+  for_each = var.assignments
+  provider = aws.eks_access
+
+  cluster_name      = each.value.cluster
+  principal_arn     = length(data.aws_iam_roles.permission_set_role[each.key].arns) == 1 ? data.aws_iam_roles.permission_set_role[each.key].arns[0] : ""
+  kubernetes_groups = [each.value.kubernetes_group]
+  type              = "STANDARD"
+
+  lifecycle {
+    precondition {
+      condition     = length(data.aws_iam_roles.permission_set_role[each.key].arns) == 1
+      error_message = "Expected exactly one AWSReservedSSO role for permission set '${var.permission_set_name}' in this account. Ensure the permission set is provisioned to the target account before applying."
+    }
+  }
+}
