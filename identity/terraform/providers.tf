@@ -28,7 +28,7 @@ provider "aws" {
   alias  = "octo-nonlive-eks-access"
   region = "eu-west-2"
   assume_role {
-    role_arn = "arn:aws:iam::${local.environment_management.account_ids[local.octo_nonlive_cluster]}:role/ContainerPlatformEKSAccess"
+    role_arn = "arn:aws:iam::${local.environment_management.account_ids["container-platform-octo-nonlive"]}:role/ContainerPlatformEKSAccess"
   }
   default_tags { tags = local.tags }
 }
@@ -38,7 +38,7 @@ provider "aws" {
   alias  = "octo-live-eks-access"
   region = "eu-west-2"
   assume_role {
-    role_arn = "arn:aws:iam::${local.environment_management.account_ids[local.octo_live_cluster]}:role/ContainerPlatformEKSAccess"
+    role_arn = "arn:aws:iam::${local.environment_management.account_ids["container-platform-octo-live"]}:role/ContainerPlatformEKSAccess"
   }
   default_tags { tags = local.tags }
 }
