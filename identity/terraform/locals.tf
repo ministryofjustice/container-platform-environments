@@ -94,18 +94,6 @@ locals {
     }
   }
 
-  cp_user_access_assignments_octo_nonlive = {
-    for key, assignment in local.cp_user_access_assignments :
-    key => assignment
-    if assignment.cluster == "container-platform-octo-nonlive"
-  }
-
-  cp_user_access_assignments_octo_live = {
-    for key, assignment in local.cp_user_access_assignments :
-    key => assignment
-    if assignment.cluster == "container-platform-octo-live"
-  }
-
   tags = {
     business-unit = "OCTO"
     service-area  = "Hosting"
