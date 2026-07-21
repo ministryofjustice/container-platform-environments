@@ -1,0 +1,18 @@
+{{- range .Values.environments }}
+{{- if eq .cluster $.Values.targetCluster }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: {{ .namespace }}
+  labels:
+    container-platform/bu: {{ $.Values.bu | quote }}
+    container-platform/product: {{ $.Values.product | quote }}
+    container-platform/managed-by: "app-baseline"
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+{{- end }}
+{{- end }}

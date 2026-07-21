@@ -1,0 +1,7 @@
+# Routing metadata (consumed by the workload ApplicationSet)
+namespace: helloworld-dev
+
+# Helm value overrides for dev
+replicaCount: 1
+image:
+  tag: latest

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: app-baseline
+description: Product namespace baseline resources (Namespace, RoleBinding, default-deny NetworkPolicy)
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
