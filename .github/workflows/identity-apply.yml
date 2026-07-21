@@ -22,7 +22,7 @@ jobs:
       run:
         working-directory: ./identity/terraform
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: aws-actions/configure-aws-credentials@ec61189d14ec14c8efccab744f656cffd0e33f37 # v6.1.0
         with:
           role-to-assume: arn:aws:iam::${{secrets.CLOUD_PLATFORM_LIVE_ACCOUNT_ID}}:role/github-actions-container-platform-identity-apply
