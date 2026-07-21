@@ -1,57 +1,130 @@
-# Container Platform Environments — OCTO
+# Container Platform Environments
 
 [![Ministry of Justice Repository Compliance Badge](https://github-community.service.justice.gov.uk/repository-standards/api/container-platform-environments/badge)](https://github-community.service.justice.gov.uk/repository-standards/container-platform-environments)
 
-This repository contains workload deployment configuration for the **OCTO** Business Unit on the Container Platform (CP3). It is the source of truth for ArgoCD ApplicationSets that deploy workloads to OCTO's spoke clusters.
+This repository is the source of truth for workload namespaces and deployments on the Container Platform (CP3). ArgoCD on the hub cluster watches this repo and automatically provisions namespace baselines and syncs application manifests to spoke clusters.
 
-## Repository Structure (ADR-015)
+## Repository Structure
 
 ```
 container-platform-environments/
-├── _bu-config.yaml                 # BU metadata and access config
-├── hello-world/                    # One directory per application
-│   ├── app.yaml                    # Application metadata (team, slack, source)
-│   ├── namespaces.yaml             # Namespace declarations
-│   └── deployment/
-│       ├── nonlive/                # K8s manifests → synced to octo-nonlive cluster
-│       │   ├── deployment.yaml
-│       │   └── service.yaml
-│       └── live/                   # K8s manifests → synced to octo-live cluster
-│           ├── deployment.yaml
-│           └── service.yaml
-├── namespaces/                     # (Legacy) Early namespace onboarding PoC
-│   └── octo/
-└── identity/                       # (Legacy) Identity configuration PoC
+├── charts/
+│   └── app-baseline/              # Helm chart: Namespace + NetworkPolicy + RoleBindings
+├── namespaces/
+│   └── <bu>/                      # One directory per Business Unit
+│       └── <product>/             # One directory per product
+│           ├── product.yaml       # Product declaration (environments, access, ownership)
+│           ├── resources/         # Terraform-managed AWS resources (future)
+│           └── <service>/         # One directory per service/component
+│               └── deployment/    # Helm chart for the service
+│                   ├── Chart.yaml
+│                   ├── templates/
+│                   ├── values.yaml
+│                   └── values/
+│                       ├── nonlive/   # Per-environment overrides (dev.yaml, staging.yaml)
+│                       └── live/      # Per-environment overrides (prod.yaml)
+├── identity/
+│   └── terraform/                 # SSO permission sets and EKS access entries
+└── scripts/
 ```
 
-## How ArgoCD Uses This Repo
+## How It Works
 
-The hub cluster's ApplicationSet watches this repo using a **git-directory-generator** with path pattern `*/deployment/<environment>`. When a new app directory appears (e.g., `my-app/deployment/nonlive/`), ArgoCD automatically:
+Two separate ArgoCD ApplicationSets consume this repo per BU per cluster tier (nonlive/live):
 
-1. Creates an Application named `octo-my-app-nonlive`
-2. Syncs the K8s manifests from that directory to the OCTO non-live spoke cluster
-3. Creates the namespace automatically (`CreateNamespace=true`)
+### 1. Baseline ApplicationSet (namespace provisioning)
 
-Non-live environments use **auto-sync** (changes to `main` deploy immediately). Live environments require **manual sync** (explicit approval in ArgoCD UI).
+Watches `namespaces/<bu>/*/product.yaml` using a git-file-generator. For each product it finds, it renders `charts/app-baseline` with the product's environments, access groups, and metadata. This creates:
 
-## Adding a New Application
+- **Namespace** per environment on the target cluster (with standard labels)
+- **Default-deny NetworkPolicy** per namespace
+- **RoleBindings** per access group per namespace
 
-1. Create a directory at the repo root: `my-app/`
-2. Add `app.yaml` with team metadata
-3. Add `namespaces.yaml` with namespace declarations
-4. Add `deployment/nonlive/` with your K8s manifests (Deployment, Service, etc.)
-5. Merge to `main` — ArgoCD picks it up automatically
+Runs under the `platform-<env>` AppProject which has permission to create cluster-scoped resources (Namespaces).
 
-## AppProject Restrictions
+### 2. Workload ApplicationSet (application deployment)
 
-This repo is the **only** source ArgoCD will accept for OCTO workloads. The `octo-nonlive` AppProject enforces:
-- `sourceRepos`: Only this repository
-- `destinations`: Only the OCTO non-live cluster ARN
-- `clusterResourceBlacklist`: Cannot create Namespace, ClusterRole, ClusterRoleBinding, or CRDs directly
+Watches `namespaces/<bu>/*/*/deployment/values/<tier>/*.yaml` using a git-file-generator. Each values file (e.g., `dev.yaml`, `prod.yaml`) produces an ArgoCD Application that renders the service's Helm chart with that environment's overrides.
 
-## Legacy Structure
+Runs under the `<bu>-<env>` AppProject which is restricted to namespaced workload resources only.
 
-The `namespaces/` and `identity/` directories are from an earlier PoC exploring namespace onboarding patterns. They use a custom YAML format (not K8s manifests) and are not consumed by ArgoCD. These will be migrated or removed as the platform matures.
+## Key Design Decisions
+
+### Why `CreateNamespace=false`
+
+Both ApplicationSets set `CreateNamespace=false` in their sync options. Namespaces are created exclusively by the baseline ApplicationSet via the `app-baseline` chart, not by workload syncs. This ensures:
+
+- Every namespace has mandatory labels, NetworkPolicy, and RoleBindings before any workload lands
+- BU workload AppProjects cannot create Namespaces (enforced by `clusterResourceBlacklist`)
+- A product cannot deploy without first declaring itself in `product.yaml`
+
+If a workload sync targets a namespace that doesn't exist, ArgoCD reports it as degraded until the baseline creates it — this is intentional.
+
+### BU isolation via AppProjects
+
+Each BU gets separate nonlive and live AppProjects. These enforce:
+- **sourceRepos**: Only this repository
+- **destinations**: Only that BU's spoke cluster
+- **namespaceResourceWhitelist**: Workload resources only (Deployments, Services, ConfigMaps, etc.)
+- **clusterResourceBlacklist**: Cannot create Namespace, ClusterRole, ClusterRoleBinding, or CRDs
+
+### Sync behaviour
+
+| Tier | Auto-sync | Prune | Self-heal |
+|------|-----------|-------|-----------|
+| nonlive (baselines) | Yes | Yes | Yes |
+| nonlive (workloads) | Yes | Yes | Yes |
+| live (baselines) | Yes | Yes | Yes |
+| live (workloads) | No (manual sync required) | — | — |
+
+## Adding a New Product
+
+1. Create `namespaces/<bu>/<product>/product.yaml`:
+
+```yaml
+product: my-product
+bu: octo
+owner:
+  team: my-team
+  slack: "#my-team-channel"
+  source: https://github.com/ministryofjustice/container-platform-environments
+
+environments:
+  - name: dev
+    cluster: container-platform-octo-nonlive
+    namespace: my-product-dev
+    is_production: false
+  - name: prod
+    cluster: container-platform-octo-live
+    namespace: my-product-prod
+    is_production: true
+
+access:
+  - group: my-team
+    role: edit
+    clusters:
+      - container-platform-octo-nonlive
+      - container-platform-octo-live
+```
+
+2. Merge to `main`. The baseline ApplicationSet picks it up and creates namespaces, NetworkPolicies, and RoleBindings automatically.
+
+## Adding a Service Deployment
+
+1. Create a Helm chart at `namespaces/<bu>/<product>/<service>/deployment/`
+2. Add per-environment values at `deployment/values/nonlive/dev.yaml` (and/or `staging.yaml`, `prod.yaml`)
+3. Each values file must include a `namespace` key matching the namespace declared in `product.yaml`
+4. Merge to `main`. The workload ApplicationSet creates an ArgoCD Application per values file.
+
+## Identity (SSO and EKS Access)
+
+The `identity/terraform/` directory manages AWS IAM Identity Center permission sets and EKS access entries. It reads all `product.yaml` files and:
+
+- Creates an SSO permission set per unique access group (e.g., `cp-my-team`)
+- Creates EKS access entries linking the SSO group to the declared clusters
+- Assigns read-only AWS + EKS viewer permissions
+
+Deployed via separate GitHub Actions workflows (`identity-plan.yml` / `identity-apply.yml`).
 
 ## References
 
