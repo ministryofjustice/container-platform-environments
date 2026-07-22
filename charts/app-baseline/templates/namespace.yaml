@@ -1,0 +1,18 @@
+{{- range .Values.environments }}
+{{- if eq .cluster $.Values.targetCluster }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .namespace }}
+  labels:
+    container-platform/bu: {{ $.Values.bu | quote }}
+    container-platform/product: {{ $.Values.product | quote }}
+    container-platform/environment: {{ .name | quote }}
+    container-platform/is-production: {{ .is_production | quote }}
+    container-platform/owner: {{ $.Values.owner.team | quote }}
+    container-platform/managed-by: "app-baseline"
+  annotations:
+    container-platform/slack-channel: {{ $.Values.owner.slack | quote }}
+{{- end }}
+{{- end }}

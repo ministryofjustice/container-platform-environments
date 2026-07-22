@@ -1,0 +1,26 @@
+{{- range $env := .Values.environments }}
+{{- if eq $env.cluster $.Values.targetCluster }}
+{{- range $.Values.access }}
+{{- if has $env.cluster .clusters }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ .group }}-{{ .role }}
+  namespace: {{ $env.namespace }}
+  labels:
+    container-platform/bu: {{ $.Values.bu | quote }}
+    container-platform/product: {{ $.Values.product | quote }}
+    container-platform/managed-by: "app-baseline"
+subjects:
+  - kind: Group
+    name: {{ .group }}
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: {{ .role }}
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
