@@ -1,0 +1,24 @@
+# Values injected by the baseline ApplicationSet from product.yaml
+product: ""
+bu: ""
+targetCluster: ""
+
+owner:
+  team: ""
+  slack: ""
+
+# Environment declarations from product.yaml — filtered by targetCluster in templates.
+# Each environment on the target cluster produces a Namespace + default-deny NetworkPolicy.
+environments: []
+  # - name: dev
+  #   cluster: container-platform-octo-nonlive
+  #   namespace: helloworld-dev
+  #   is_production: false
+
+# Access declarations from product.yaml — creates RoleBindings per namespace.
+access: []
+  # - group: cloud-platform-engineers
+  #   role: edit
+  #   clusters:
+  #     - container-platform-octo-nonlive
+  #     - container-platform-octo-live

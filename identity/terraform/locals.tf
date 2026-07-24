@@ -13,21 +13,23 @@ locals {
 
   sso_management_assume_role_name = local.is_identity_apply_role ? "ContainerPlatformSSOAdministrator" : "ContainerPlatformSSOReadOnly"
 
-  # Aggregate all namespace manifests into a single map keyed by app name.
-  namespaces = merge([
-    for rel_path in fileset("${path.module}/../../namespaces", "**/namespace.yaml") : {
-      (yamldecode(file("${path.module}/../../namespaces/${rel_path}")).name) = merge(
+  # Aggregate all product manifests into a single map keyed by product name.
+  # New schema: product.yaml with access[] at product level (not per-namespace).
+  products = merge([
+    for rel_path in fileset("${path.module}/../../namespaces", "**/product.yaml") : {
+      (yamldecode(file("${path.module}/../../namespaces/${rel_path}")).product) = merge(
         yamldecode(file("${path.module}/../../namespaces/${rel_path}")),
         { source_file = rel_path }
       )
     }
   ]...)
 
-  # List of all the teams that have access to any namespace in any environment, across all apps. This is used to create the permission sets and account assignments for each team.
+  # List of all unique access groups across all products.
+  # Each access entry has: group, role, clusters[]
   namespace_access_teams = toset(flatten([
-    for app in values(local.namespaces) : flatten([
-      for namespace in try(app.namespaces, []) : try(namespace.access, [])
-    ])
+    for product in values(local.products) : [
+      for access_entry in try(product.access, []) : access_entry.group
+    ]
   ]))
 
   # Static list of platform clusters for cp_user access assignments.
@@ -46,14 +48,15 @@ locals {
     team => format("cp-%s", replace(replace(replace(lower(team), " ", "-"), "_", "-"), ".", "-"))
   }
 
-  # List of all the unique combinations of team and cluster that have access to any namespace in any environment, across all apps. This is used to create the account assignments for each team and cluster. 
-  namespace_team_cluster_keys = toset(flatten(flatten([
-    for app in values(local.namespaces) : [
-      for namespace in try(app.namespaces, []) : [
-        for team in try(namespace.access, []) : "${team}|${namespace.cluster}"
+  # List of all the unique combinations of team and cluster from product access[] entries.
+  # Each access entry declares which clusters the group can access directly.
+  namespace_team_cluster_keys = toset(flatten([
+    for product in values(local.products) : [
+      for access_entry in try(product.access, []) : [
+        for cluster in access_entry.clusters : "${access_entry.group}|${cluster}"
       ]
     ]
-  ])))
+  ]))
 
   # Map of team and cluster combinations to a map containing the team and cluster. This is used to create the account assignments for each team and cluster.
   namespace_team_cluster_assignments = {

@@ -1,0 +1,14 @@
+# Routing metadata (consumed by the workload ApplicationSet)
+namespace: helloworld-prod
+
+# Helm value overrides for production
+replicaCount: 2
+image:
+  tag: "1.0.0"
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 250m
+    memory: 256Mi
