@@ -101,3 +101,37 @@ module "cp_user_eks_access_entries_laa_live" {
   }
   depends_on = [module.cp_user_eks_readonly_for_cp_engineers]
 }
+
+module "cp_user_eks_access_entries_cd_nonlive" {
+  source = "./modules/eks_access_entries"
+
+  providers = {
+    aws.eks_access = aws.cd-nonlive-eks-access
+  }
+
+  permission_set_name = "cp-user-eks-readonly"
+  assignments = {
+    "container-platform-cd-nonlive" = {
+      cluster          = "container-platform-cd-nonlive"
+      kubernetes_group = "cloud-platform-engineers"
+    }
+  }
+  depends_on = [module.cp_user_eks_readonly_for_cp_engineers]
+}
+
+module "cp_user_eks_access_entries_cd_live" {
+  source = "./modules/eks_access_entries"
+
+  providers = {
+    aws.eks_access = aws.cd-live-eks-access
+  }
+
+  permission_set_name = "cp-user-eks-readonly"
+  assignments = {
+    "container-platform-cd-live" = {
+      cluster          = "container-platform-cd-live"
+      kubernetes_group = "cloud-platform-engineers"
+    }
+  }
+  depends_on = [module.cp_user_eks_readonly_for_cp_engineers]
+}

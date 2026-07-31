@@ -82,3 +82,23 @@ provider "aws" {
   }
   default_tags { tags = local.tags }
 }
+
+# AWS provider (cd nonlive account): Used to manage EKS access entries through a cross-account role.
+provider "aws" {
+  alias  = "cd-nonlive-eks-access"
+  region = "eu-west-2"
+  assume_role {
+    role_arn = "arn:aws:iam::${local.environment_management.account_ids["container-platform-cd-nonlive"]}:role/ContainerPlatformEKSAccess"
+  }
+  default_tags { tags = local.tags }
+}
+
+# AWS provider (cd live account): Used to manage EKS access entries through a cross-account role.
+provider "aws" {
+  alias  = "cd-live-eks-access"
+  region = "eu-west-2"
+  assume_role {
+    role_arn = "arn:aws:iam::${local.environment_management.account_ids["container-platform-cd-live"]}:role/ContainerPlatformEKSAccess"
+  }
+  default_tags { tags = local.tags }
+}
