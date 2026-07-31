@@ -123,3 +123,45 @@ module "namespace_team_eks_access_entries_laa_live" {
 
   depends_on = [module.namespace_team_readonly_eks]
 }
+
+module "namespace_team_eks_access_entries_cd_nonlive" {
+  for_each = local.namespace_access_teams
+  source   = "./modules/eks_access_entries"
+
+  providers = {
+    aws.eks_access = aws.cd-nonlive-eks-access
+  }
+
+  permission_set_name = local.namespace_team_permission_set_names[each.key]
+  assignments = {
+    for key, assignment in local.namespace_team_access_assignments_cd_nonlive :
+    key => {
+      cluster          = assignment.cluster
+      kubernetes_group = assignment.kubernetes_group
+    }
+    if assignment.kubernetes_group == each.key
+  }
+
+  depends_on = [module.namespace_team_readonly_eks]
+}
+
+module "namespace_team_eks_access_entries_cd_live" {
+  for_each = local.namespace_access_teams
+  source   = "./modules/eks_access_entries"
+
+  providers = {
+    aws.eks_access = aws.cd-live-eks-access
+  }
+
+  permission_set_name = local.namespace_team_permission_set_names[each.key]
+  assignments = {
+    for key, assignment in local.namespace_team_access_assignments_cd_live :
+    key => {
+      cluster          = assignment.cluster
+      kubernetes_group = assignment.kubernetes_group
+    }
+    if assignment.kubernetes_group == each.key
+  }
+
+  depends_on = [module.namespace_team_readonly_eks]
+}
