@@ -1,3 +1,4 @@
+{{- include "app-baseline.validateAccess" $ -}}
 {{- range $env := .Values.environments }}
 {{- if eq $env.cluster $.Values.targetCluster }}
 {{- range $.Values.access }}

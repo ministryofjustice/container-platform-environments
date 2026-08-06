@@ -1,0 +1,95 @@
+suite: RoleBinding rendering
+templates:
+  - rolebinding.yaml
+values:
+  - ../tests/fixtures/helloworld-nonlive.yaml
+tests:
+  - it: creates a RoleBinding for each access entry matching the target cluster
+    set:
+      targetCluster: container-platform-octo-nonlive
+    asserts:
+      - hasDocuments:
+          count: 2
+      - isKind:
+          of: RoleBinding
+        documentIndex: 0
+
+  - it: uses the group name and role in the binding name
+    set:
+      targetCluster: container-platform-octo-nonlive
+    asserts:
+      - equal:
+          path: metadata.name
+          value: github-cloud-platform-edit
+        documentIndex: 0
+
+  - it: binds the correct ClusterRole
+    set:
+      targetCluster: container-platform-octo-nonlive
+    asserts:
+      - equal:
+          path: roleRef.name
+          value: edit
+        documentIndex: 0
+      - equal:
+          path: roleRef.kind
+          value: ClusterRole
+        documentIndex: 0
+
+  - it: sets the correct group as subject
+    set:
+      targetCluster: container-platform-octo-nonlive
+    asserts:
+      - equal:
+          path: subjects[0].kind
+          value: Group
+        documentIndex: 0
+      - equal:
+          path: subjects[0].name
+          value: github-cloud-platform
+        documentIndex: 0
+
+  - it: targets the correct namespace
+    set:
+      targetCluster: container-platform-octo-nonlive
+    asserts:
+      - equal:
+          path: metadata.namespace
+          value: helloworld-dev
+        documentIndex: 0
+      - equal:
+          path: metadata.namespace
+          value: helloworld-staging
+        documentIndex: 1
+
+  - it: renders no RoleBindings when no access entries match the cluster
+    set:
+      targetCluster: container-platform-octo-live
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders no RoleBindings when access list is empty
+    set:
+      targetCluster: container-platform-octo-nonlive
+      access: []
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: includes standard labels
+    set:
+      targetCluster: container-platform-octo-nonlive
+    asserts:
+      - equal:
+          path: metadata.labels["container-platform/bu"]
+          value: "octo"
+        documentIndex: 0
+      - equal:
+          path: metadata.labels["container-platform/product"]
+          value: "helloworld"
+        documentIndex: 0
+      - equal:
+          path: metadata.labels["container-platform/managed-by"]
+          value: "app-baseline"
+        documentIndex: 0

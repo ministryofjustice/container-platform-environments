@@ -24,13 +24,24 @@ environments:
 
 # Access declarations — one permission set + EKS Access Entry per group.
 # RoleBindings are created in every namespace on the listed clusters.
+#
+# Roles: view | edit | admin
+#   - view:  read-only (excludes Secrets)
+#   - edit:  read/write (includes Secrets)
+#   - admin: edit + can create Roles/RoleBindings
+#
+# Live environments should be view-only by default. Workloads deploy via Argo CD,
+# so direct edit/admin on live is rarely needed.
+#
+# Group naming: github-<org>-<team>
 access:
-  - group: cloud-platform-engineers
+  # Non-live: edit access for development workflows
+  - group: github-cloud-platform
     role: edit
     clusters:
       - container-platform-octo-nonlive
+  # Live: view-only by default — deployments go through Argo CD
+  - group: github-cloud-platform
+    role: view
+    clusters:
       - container-platform-octo-live
-  - group: cloud-platform
-    role: edit
-    clusters:
-      - container-platform-octo-nonlive

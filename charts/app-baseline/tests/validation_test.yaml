@@ -1,0 +1,207 @@
+suite: Access validation
+templates:
+  - rolebinding.yaml
+tests:
+  # --- Role validation ---
+
+  - it: rejects an invalid role name
+    set:
+      product: testprod
+      bu: octo
+      owner:
+        team: test
+        slack: "#test"
+      targetCluster: container-platform-octo-nonlive
+      environments:
+        - name: dev
+          cluster: container-platform-octo-nonlive
+          namespace: testprod-dev
+          is_production: false
+      access:
+        - group: github-test-team
+          role: superadmin
+          clusters:
+            - container-platform-octo-nonlive
+    asserts:
+      - failedTemplate:
+          errorMessage: 'app-baseline: role "superadmin" is not supported. Must be one of: view, edit, admin.'
+
+  - it: accepts view role
+    set:
+      product: testprod
+      bu: octo
+      owner:
+        team: test
+        slack: "#test"
+      targetCluster: container-platform-octo-nonlive
+      environments:
+        - name: dev
+          cluster: container-platform-octo-nonlive
+          namespace: testprod-dev
+          is_production: false
+      access:
+        - group: github-test-team
+          role: view
+          clusters:
+            - container-platform-octo-nonlive
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: accepts edit role on non-production cluster
+    set:
+      product: testprod
+      bu: octo
+      owner:
+        team: test
+        slack: "#test"
+      targetCluster: container-platform-octo-nonlive
+      environments:
+        - name: dev
+          cluster: container-platform-octo-nonlive
+          namespace: testprod-dev
+          is_production: false
+      access:
+        - group: github-test-team
+          role: edit
+          clusters:
+            - container-platform-octo-nonlive
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: accepts admin role on non-production cluster
+    set:
+      product: testprod
+      bu: octo
+      owner:
+        team: test
+        slack: "#test"
+      targetCluster: container-platform-octo-nonlive
+      environments:
+        - name: dev
+          cluster: container-platform-octo-nonlive
+          namespace: testprod-dev
+          is_production: false
+      access:
+        - group: github-test-team
+          role: admin
+          clusters:
+            - container-platform-octo-nonlive
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  # --- Live environment protection ---
+
+  - it: rejects edit on production cluster without justification
+    set:
+      product: testprod
+      bu: octo
+      owner:
+        team: test
+        slack: "#test"
+      targetCluster: container-platform-octo-live
+      environments:
+        - name: prod
+          cluster: container-platform-octo-live
+          namespace: testprod-prod
+          is_production: true
+      access:
+        - group: github-test-team
+          role: edit
+          clusters:
+            - container-platform-octo-live
+    asserts:
+      - failedTemplate:
+          errorMessage: 'app-baseline: group "github-test-team" is granted "edit" on production cluster "container-platform-octo-live". Live environments should be view-only. If this is intentional, add `live_access_justification: "<reason>"` to the access entry.'
+
+  - it: rejects admin on production cluster without justification
+    set:
+      product: testprod
+      bu: octo
+      owner:
+        team: test
+        slack: "#test"
+      targetCluster: container-platform-octo-live
+      environments:
+        - name: prod
+          cluster: container-platform-octo-live
+          namespace: testprod-prod
+          is_production: true
+      access:
+        - group: github-test-team
+          role: admin
+          clusters:
+            - container-platform-octo-live
+    asserts:
+      - failedTemplate:
+          errorMessage: 'app-baseline: group "github-test-team" is granted "admin" on production cluster "container-platform-octo-live". Live environments should be view-only. If this is intentional, add `live_access_justification: "<reason>"` to the access entry.'
+
+  - it: accepts edit on production cluster with justification
+    set:
+      product: testprod
+      bu: octo
+      owner:
+        team: test
+        slack: "#test"
+      targetCluster: container-platform-octo-live
+      environments:
+        - name: prod
+          cluster: container-platform-octo-live
+          namespace: testprod-prod
+          is_production: true
+      access:
+        - group: github-platform-admins
+          role: edit
+          clusters:
+            - container-platform-octo-live
+          live_access_justification: "Incident response requires direct access"
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: accepts admin on production cluster with justification
+    set:
+      product: testprod
+      bu: octo
+      owner:
+        team: test
+        slack: "#test"
+      targetCluster: container-platform-octo-live
+      environments:
+        - name: prod
+          cluster: container-platform-octo-live
+          namespace: testprod-prod
+          is_production: true
+      access:
+        - group: github-platform-admins
+          role: admin
+          clusters:
+            - container-platform-octo-live
+          live_access_justification: "Platform engineers for incident response"
+    asserts:
+      - hasDocuments:
+          count: 1
+
+  - it: accepts view on production cluster without justification
+    set:
+      product: testprod
+      bu: octo
+      owner:
+        team: test
+        slack: "#test"
+      targetCluster: container-platform-octo-live
+      environments:
+        - name: prod
+          cluster: container-platform-octo-live
+          namespace: testprod-prod
+          is_production: true
+      access:
+        - group: github-test-team
+          role: view
+          clusters:
+            - container-platform-octo-live
+    asserts:
+      - hasDocuments:
+          count: 1
