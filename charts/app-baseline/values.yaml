@@ -25,14 +25,14 @@ environments: []
 # Live environments should default to view-only. Edit/admin on live requires
 # justification and is expected to be rare — workloads should deploy via Argo CD.
 #
-# Group naming convention: github-<org>-<team>
-#   e.g. github-laa-developers, github-hmpps-dev-team
+# Group naming convention: use your GitHub team name directly
+#   e.g. laa-developers, hmpps-dev-team, cloud-platform
 access: []
-  # - group: github-laa-developers
+  # - group: laa-developers
   #   role: edit
   #   clusters:
   #     - container-platform-laa-nonlive
-  # - group: github-laa-developers
+  # - group: laa-developers
   #   role: view
   #   clusters:
   #     - container-platform-laa-live

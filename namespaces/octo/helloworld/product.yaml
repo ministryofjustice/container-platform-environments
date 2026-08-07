@@ -33,15 +33,15 @@ environments:
 # Live environments should be view-only by default. Workloads deploy via Argo CD,
 # so direct edit/admin on live is rarely needed.
 #
-# Group naming: github-<org>-<team>
+# Group naming: Name of your Github team
 access:
   # Non-live: edit access for development workflows
-  - group: github-cloud-platform
+  - group: cloud-platform
     role: edit
     clusters:
       - container-platform-octo-nonlive
   # Live: view-only by default — deployments go through Argo CD
-  - group: github-cloud-platform
+  - group: cloud-platform
     role: view
     clusters:
       - container-platform-octo-live

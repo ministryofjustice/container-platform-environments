@@ -16,7 +16,7 @@ environments:
     is_production: false
 
 access:
-  - group: github-cloud-platform
+  - group: cloud-platform
     role: edit
     clusters:
       - container-platform-octo-nonlive

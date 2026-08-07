@@ -100,11 +100,11 @@ environments:
     is_production: true
 
 access:
-  - group: github-my-team
+  - group: my-team
     role: edit
     clusters:
       - container-platform-octo-nonlive
-  - group: github-my-team
+  - group: my-team
     role: view
     clusters:
       - container-platform-octo-live
@@ -136,14 +136,14 @@ The chart **enforces** this: granting `edit` or `admin` on a production cluster 
 ```yaml
 # This will fail:
 access:
-  - group: github-my-team
+  - group: my-team
     role: edit
     clusters:
       - container-platform-octo-live   # is_production: true
 
 # This passes (justification provided):
 access:
-  - group: github-my-team
+  - group: my-team
     role: admin
     clusters:
       - container-platform-octo-live
@@ -152,15 +152,15 @@ access:
 
 ### Group naming convention
 
-Groups use the format `github-<org>-<team>`, matching the GitHub team structure:
+The `group` field refers to a **GitHub team** in the `ministryofjustice` organisation. Use the team slug (the URL-safe name shown in `github.com/orgs/ministryofjustice/teams/<slug>`):
 
-| GitHub team | Group name in `product.yaml` |
-|-------------|------------------------------|
-| `ministryofjustice/laa-developers` | `github-laa-developers` |
-| `ministryofjustice/hmpps-dev-team` | `github-hmpps-dev-team` |
-| `ministryofjustice/cloud-platform` | `github-cloud-platform` |
+| GitHub team URL | `group` in `product.yaml` |
+|-----------------|---------------------------|
+| `github.com/orgs/ministryofjustice/teams/laa-developers` | `laa-developers` |
+| `github.com/orgs/ministryofjustice/teams/hmpps-dev-team` | `hmpps-dev-team` |
+| `github.com/orgs/ministryofjustice/teams/cloud-platform-engineers` | `cloud-platform-engineers` |
 
-The `group` field must match the Kubernetes group name mapped by the EKS access entry (managed in `identity/terraform/`).
+The identity terraform looks up this name in AWS Identity Center (where GitHub teams are synced), creates the SSO permission set and EKS access entry, and maps the team to a Kubernetes group with the same name. No prefix or transformation is needed — write the GitHub team slug exactly as it appears.
 
 ### Validation
 

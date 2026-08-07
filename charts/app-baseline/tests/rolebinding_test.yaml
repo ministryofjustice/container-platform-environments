@@ -20,7 +20,7 @@ tests:
     asserts:
       - equal:
           path: metadata.name
-          value: github-cloud-platform-edit
+          value: cloud-platform-edit
         documentIndex: 0
 
   - it: binds the correct ClusterRole
@@ -46,7 +46,7 @@ tests:
         documentIndex: 0
       - equal:
           path: subjects[0].name
-          value: github-cloud-platform
+          value: cloud-platform
         documentIndex: 0
 
   - it: targets the correct namespace
