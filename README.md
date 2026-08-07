@@ -38,7 +38,7 @@ Watches `namespaces/<bu>/*/product.yaml` using a git-file-generator. For each pr
 
 - **Namespace** per environment on the target cluster (with standard labels)
 - **Default-deny NetworkPolicy** per namespace
-- **RoleBindings** per access group per namespace
+- **RoleBindings** per access group per namespace (binding built-in ClusterRoles: `view`, `edit`, `admin`)
 
 Runs under the `platform-<env>` AppProject which has permission to create cluster-scoped resources (Namespaces).
 
@@ -104,10 +104,72 @@ access:
     role: edit
     clusters:
       - container-platform-octo-nonlive
+  - group: my-team
+    role: view
+    clusters:
       - container-platform-octo-live
 ```
 
 2. Merge to `main`. The baseline ApplicationSet picks it up and creates namespaces, NetworkPolicies, and RoleBindings automatically.
+
+## RBAC Permissions Model
+
+Access to namespaces is managed through the `access` section in `product.yaml`. The chart binds groups to one of three built-in Kubernetes ClusterRoles per namespace.
+
+### Permission levels
+
+| Role | Grants | Secrets access | Typical use |
+|------|--------|----------------|-------------|
+| `view` | Read-only access to most objects | No | Live environments, stakeholders, on-call |
+| `edit` | Read/write access to most objects | Yes | Development, debugging in non-live |
+| `admin` | Edit + create Roles/RoleBindings | Yes | Namespace owners, platform engineers |
+
+### Live vs non-live environments
+
+| Environment | Default access | Rationale |
+|-------------|---------------|-----------|
+| Non-live | `edit` or `admin` | Developers need flexibility for development workflows |
+| Live | `view` only | Workloads deploy via Argo CD; direct mutation is discouraged |
+
+The chart **enforces** this: granting `edit` or `admin` on a production cluster (`is_production: true`) requires an explicit `live_access_justification` field on the access entry. Without it, the render fails.
+
+```yaml
+# This will fail:
+access:
+  - group: my-team
+    role: edit
+    clusters:
+      - container-platform-octo-live   # is_production: true
+
+# This passes (justification provided):
+access:
+  - group: my-team
+    role: admin
+    clusters:
+      - container-platform-octo-live
+    live_access_justification: "Platform engineers require admin for incident response"
+```
+
+### Group naming convention
+
+The `group` field refers to a **GitHub team** in the `ministryofjustice` organisation. Use the team slug (the URL-safe name shown in `github.com/orgs/ministryofjustice/teams/<slug>`):
+
+| GitHub team URL | `group` in `product.yaml` |
+|-----------------|---------------------------|
+| `github.com/orgs/ministryofjustice/teams/laa-developers` | `laa-developers` |
+| `github.com/orgs/ministryofjustice/teams/hmpps-dev-team` | `hmpps-dev-team` |
+| `github.com/orgs/ministryofjustice/teams/cloud-platform-engineers` | `cloud-platform-engineers` |
+
+The identity terraform looks up this name in AWS Identity Center (where GitHub teams are synced), creates the SSO permission set and EKS access entry, and maps the team to a Kubernetes group with the same name. No prefix or transformation is needed — write the GitHub team slug exactly as it appears.
+
+### Validation
+
+The chart validates access declarations at render time:
+
+| Check | Behaviour |
+|-------|-----------|
+| Role must be `view`, `edit`, or `admin` | Render fails with actionable error |
+| `edit`/`admin` on a production cluster | Render fails unless `live_access_justification` is provided |
 
 ## Adding a Service Deployment
 
@@ -115,6 +177,41 @@ access:
 2. Add per-environment values at `deployment/values/nonlive/dev.yaml` (and/or `staging.yaml`, `prod.yaml`)
 3. Each values file must include a `namespace` key matching the namespace declared in `product.yaml`
 4. Merge to `main`. The workload ApplicationSet creates an ArgoCD Application per values file.
+
+## Testing
+
+The `app-baseline` chart has unit tests using [helm-unittest](https://github.com/helm-unittest/helm-unittest). These validate template rendering and policy enforcement without requiring a deployed cluster.
+
+### Running tests locally
+
+```bash
+# Install the plugin (one-time)
+helm plugin install https://github.com/helm-unittest/helm-unittest.git
+
+# Run the tests
+helm unittest ./charts/app-baseline
+```
+
+### Test structure
+
+```
+charts/app-baseline/tests/
+├── fixtures/
+│   └── helloworld-nonlive.yaml   # Shared test values
+├── rolebinding_test.yaml          # RoleBinding rendering correctness
+└── validation_test.yaml           # Access policy enforcement
+```
+
+### What's tested
+
+| Suite | Covers |
+|-------|--------|
+| `validation_test.yaml` | Invalid role names rejected, live=view-only enforced, justification escape hatch works |
+| `rolebinding_test.yaml` | Correct binding name, namespace targeting, ClusterRole ref, group subject, labels, empty-input handling |
+
+### Adding new tests
+
+Test files go in `charts/app-baseline/tests/` with the suffix `_test.yaml`. Each test provides values via `set:` and asserts on the rendered output. To test failure cases, use `failedTemplate` with the expected error message. See existing tests for examples.
 
 ## Identity (SSO and EKS Access)
 

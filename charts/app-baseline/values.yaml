@@ -16,9 +16,23 @@ environments: []
   #   is_production: false
 
 # Access declarations from product.yaml — creates RoleBindings per namespace.
+#
+# Supported roles (built-in Kubernetes ClusterRoles):
+#   - view:  read-only access to most objects (excludes Secrets)
+#   - edit:  read/write access to most objects (includes Secrets)
+#   - admin: edit + ability to create Roles and RoleBindings
+#
+# Live environments should default to view-only. Edit/admin on live requires
+# justification and is expected to be rare — workloads should deploy via Argo CD.
+#
+# Group naming convention: use your GitHub team name directly
+#   e.g. laa-developers, hmpps-dev-team, cloud-platform
 access: []
-  # - group: cloud-platform-engineers
+  # - group: laa-developers
   #   role: edit
   #   clusters:
-  #     - container-platform-octo-nonlive
-  #     - container-platform-octo-live
+  #     - container-platform-laa-nonlive
+  # - group: laa-developers
+  #   role: view
+  #   clusters:
+  #     - container-platform-laa-live
