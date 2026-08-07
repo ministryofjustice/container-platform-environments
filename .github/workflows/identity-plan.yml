@@ -5,6 +5,7 @@ on:
     paths:
       - "identity/terraform/**"
       - "identity/modules/**"
+      - "namespaces/**/product.yaml"
       - ".github/workflows/identity-plan.yml"
   workflow_dispatch:
 
