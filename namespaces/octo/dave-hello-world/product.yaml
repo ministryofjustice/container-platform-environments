@@ -1,0 +1,51 @@
+product: dave-helloworld
+bu: octo
+owner:
+  team: cloud-platform
+  slack: "#cloud-platform"
+  source: https://github.com/ministryofjustice/container-platform-environments
+
+# Environments map a logical stage (dev/staging/prod) to a cluster + namespace.
+# Multiple environments can share a cluster (e.g. dev + staging on nonlive)
+# while remaining isolated in separate namespaces.
+environments:
+  - name: dev
+    cluster: container-platform-octo-nonlive
+    namespace: dave-helloworld-dev
+    is_production: false
+  - name: prod
+    cluster: container-platform-octo-live
+    namespace: dave-helloworld-prod
+    is_production: true
+
+# Access declarations — one permission set + EKS Access Entry per group.
+# RoleBindings are created in every namespace on the listed clusters.
+#
+# Roles: view | edit | admin
+#   - view:  read-only (excludes Secrets)
+#   - edit:  read/write (includes Secrets)
+#   - admin: edit + can create Roles/RoleBindings
+#
+# Live environments should be view-only by default. Workloads deploy via Argo CD,
+# so direct edit/admin on live is rarely needed.
+#
+# Group naming: Name of your Github team
+access:
+  # Non-live: edit access for development workflows
+  - group: cloud-platform
+    role: edit
+    clusters:
+      - container-platform-octo-nonlive
+  - group: cloud-platform-engineers
+    role: edit
+    clusters:
+      - container-platform-octo-nonlive
+  # Live: view-only by default — deployments go through Argo CD
+  - group: cloud-platform
+    role: view
+    clusters:
+      - container-platform-octo-live
+  - group: cloud-platform-engineers
+    role: view
+    clusters:
+      - container-platform-octo-live
