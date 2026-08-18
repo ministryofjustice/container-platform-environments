@@ -1,0 +1,23 @@
+# Default values for dns-testapp. Overridden per environment by values/<tier>/<env>.yaml
+replicaCount: 1
+
+image:
+  repository: nginxinc/nginx-unprivileged
+  tag: latest
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
+
+service:
+  port: 80
+  targetPort: 8080
+
+gateway:
+  name: default
+  namespace: envoy-gateway-system
+  sectionName: http
