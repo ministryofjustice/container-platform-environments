@@ -4,12 +4,17 @@ metadata:
   name: dns-testapp
 spec:
   parentRefs:
-    - name: {{ .Values.gateway.name }}
-      namespace: {{ .Values.gateway.namespace }}
-      sectionName: {{ .Values.gateway.sectionName }}
+    - name: dns-testapp
+      kind: ListenerSet
+      group: gateway.networking.k8s.io
+      sectionName: https
   hostnames:
-    - {{ .Values.host | quote }}
+    - {{ required "host must be configured" .Values.host | quote }}
   rules:
-    - backendRefs:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
         - name: dns-testapp
           port: {{ .Values.service.port }}

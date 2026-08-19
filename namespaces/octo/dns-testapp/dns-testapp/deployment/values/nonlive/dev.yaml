@@ -1,10 +1,10 @@
-# Routing metadata (consumed by the workload ApplicationSet)
 namespace: dns-testapp-dev
-
-# Helm value overrides for dev
 replicaCount: 1
-
 host: dns-testapp.container-platform-octo-nonlive.development.container-platform.service.justice.gov.uk
-
 image:
   tag: latest
+gateway:
+  name: default
+  namespace: envoy-gateway-system
+tls:
+  clusterIssuer: letsencrypt-staging
