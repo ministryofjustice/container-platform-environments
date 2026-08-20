@@ -1,0 +1,20 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: dns-testapp-allow-gateway
+  labels:
+    app: dns-testapp
+spec:
+  podSelector:
+    matchLabels:
+      app: dns-testapp
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.gateway.namespace | quote }}
+      ports:
+        - protocol: TCP
+          port: {{ .Values.service.targetPort }}
