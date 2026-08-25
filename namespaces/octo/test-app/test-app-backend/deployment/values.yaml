@@ -1,0 +1,19 @@
+# Default values for test-app-backend. Overridden per environment by values/<tier>/<env>.yaml
+replicaCount: 1
+
+# Image is pinned by digest (not tag) for supply-chain integrity.
+image:
+  repository: cloudplatformmoj/container-platform-test-app-backend
+  digest: sha256:ff27cc97e1a05902075f0cf4baf43b7dc0c23627999ec2538a770f45942ef31e
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
+
+service:
+  port: 8080
+  targetPort: 8080

@@ -1,0 +1,20 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: test-app-backend-allow-frontend
+  labels:
+    app: test-app-backend
+spec:
+  podSelector:
+    matchLabels:
+      app: test-app-backend
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: test-app-frontend
+      ports:
+        - protocol: TCP
+          port: {{ .Values.service.targetPort }}

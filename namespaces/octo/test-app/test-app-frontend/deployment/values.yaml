@@ -1,0 +1,26 @@
+# Default values for test-app-frontend. Overridden per environment by values/<tier>/<env>.yaml
+replicaCount: 1
+
+# Image is pinned by digest (not tag) for supply-chain integrity.
+image:
+  repository: cloudplatformmoj/container-platform-test-app-frontend
+  digest: sha256:a08990a43fee3325362c6126b8376be566e44b1e0d24d4123eab87296fdff125
+
+# Backend Service DNS the frontend calls (matches the backend Service name + port).
+backendUrl: http://test-app-backend:8080
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
+
+service:
+  port: 80
+  targetPort: 8080
+
+gateway:
+  name: default
+  namespace: envoy-gateway-system

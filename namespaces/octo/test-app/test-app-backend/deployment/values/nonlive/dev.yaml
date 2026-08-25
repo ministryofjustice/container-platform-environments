@@ -1,0 +1,5 @@
+# Routing metadata (the `namespace` key is consumed by the workload ApplicationSet)
+namespace: test-app-dev
+
+# Helm value overrides for dev
+replicaCount: 1
