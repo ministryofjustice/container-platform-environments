@@ -4,11 +4,11 @@ metadata:
   name: myapp
 spec:
   parentRefs:
-    - name: default-listenerset
-      namespace: envoy-gateway-system
+    - name: {{ .Values.gateway.name }}-listenerset
+      namespace: {{ .Values.gateway.namespace }}
       kind: ListenerSet
       group: gateway.networking.k8s.io
-      sectionName: https
+      sectionName: {{ .Values.gateway.sectionName }}
   hostnames:
     - {{ required "host must be configured" .Values.host | quote }}
   rules:

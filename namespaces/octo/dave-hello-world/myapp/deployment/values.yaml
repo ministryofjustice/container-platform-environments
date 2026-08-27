@@ -16,3 +16,8 @@ resources:
 service:
   port: 80
   targetPort: 8080
+
+gateway:
+  name: default
+  namespace: envoy-gateway-system
+  sectionName: https
