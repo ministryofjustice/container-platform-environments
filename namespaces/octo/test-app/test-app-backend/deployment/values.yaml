@@ -3,8 +3,8 @@ replicaCount: 1
 
 # Image is pinned by digest (not tag) for supply-chain integrity.
 image:
-  repository: cloudplatformmoj/container-platform-test-app-backend
-  digest: sha256:ff27cc97e1a05902075f0cf4baf43b7dc0c23627999ec2538a770f45942ef31e
+  repository: ghcr.io/ministryofjustice/container-platform-test-app-backend
+  digest: sha256:851b54399be0e21963beb3a4947d050f03b8985bf4aec80c13a89232ad83204c
 
 resources:
   requests:

@@ -3,8 +3,8 @@ replicaCount: 1
 
 # Image is pinned by digest (not tag) for supply-chain integrity.
 image:
-  repository: cloudplatformmoj/container-platform-test-app-frontend
-  digest: sha256:a08990a43fee3325362c6126b8376be566e44b1e0d24d4123eab87296fdff125
+  repository: ghcr.io/ministryofjustice/container-platform-test-app-frontend
+  digest: sha256:f431d209a324e66788ed58e52d498f83a94312c05880ec69c8dfdc3ff992cb62
 
 # Backend Service DNS the frontend calls (matches the backend Service name + port).
 backendUrl: http://test-app-backend:8080
