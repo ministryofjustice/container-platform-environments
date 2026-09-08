@@ -4,7 +4,7 @@ replicaCount: 1
 # Image is pinned by digest (not tag) for supply-chain integrity.
 image:
   repository: ghcr.io/ministryofjustice/container-platform-test-app-frontend
-  digest: sha256:f431d209a324e66788ed58e52d498f83a94312c05880ec69c8dfdc3ff992cb62
+  digest: sha256:4b02942ac43db719331e53d8c5d519850cd2da2c4f2fe82df0162107a87e9b93
 
 # Backend Service DNS the frontend calls (matches the backend Service name + port).
 backendUrl: http://test-app-backend:8080
