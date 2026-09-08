@@ -9,8 +9,17 @@ environments:
     cluster: container-platform-octo-nonlive
     namespace: test-app-dev
     is_production: false
+  - name: prod
+    cluster: container-platform-octo-live
+    namespace: test-app-prod
+    is_production: true
 access:
   - group: cloud-platform
     role: edit
     clusters:
       - container-platform-octo-nonlive
+  # Live: view-only by default. Deployments go through Argo CD
+  - group: cloud-platform
+    role: view
+    clusters:
+      - container-platform-octo-live
