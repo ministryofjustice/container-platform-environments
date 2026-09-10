@@ -2,6 +2,8 @@
 
 [![Ministry of Justice Repository Compliance Badge](https://github-community.service.justice.gov.uk/repository-standards/api/container-platform-environments/badge)](https://github-community.service.justice.gov.uk/repository-standards/container-platform-environments)
 
+To use this repository please read the [user guidance](https://user-guide.development.container-platform.service.justice.gov.uk/).
+
 This repository is the source of truth for workload namespaces and deployments on the Container Platform (CP3). ArgoCD on the hub cluster watches this repo and automatically provisions namespace baselines and syncs application manifests to spoke clusters.
 
 ## Repository Structure
