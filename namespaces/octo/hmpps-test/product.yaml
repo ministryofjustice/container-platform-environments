@@ -1,0 +1,16 @@
+product: hmpps-test
+bu: octo
+owner:
+  team: hmpps-sre
+  slack: "#ask-hmpps-digital-sre"
+  source: https://github.com/ministryofjustice/container-platform-environments
+environments:
+  - name: dev
+    cluster: container-platform-octo-nonlive
+    namespace: hmpps-test-dev
+    is_production: false
+access:
+  - group: hmpps-sre
+    role: edit
+    clusters:
+      - container-platform-octo-nonlive
