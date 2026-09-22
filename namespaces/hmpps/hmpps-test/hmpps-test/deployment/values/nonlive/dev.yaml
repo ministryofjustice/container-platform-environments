@@ -13,13 +13,9 @@ generic-service:
     SPRINGDOC_SWAGGER-UI_ENABLED: "true"
 
   scheduledDowntime:
-    enabled: true
+    enabled: false
 
   allowlist:
     groups:
       - digital_staff_and_mojo
       - moj_cloud_platform
-
-generic-prometheus-alerts:
-  businessHoursOnly: true
-  alertSeverity: hmpps_alerts_nonprod
