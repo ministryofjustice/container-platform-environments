@@ -6,7 +6,7 @@ generic-service:
 
   image:
     repository: ghcr.io/ministryofjustice/hmpps-template-kotlin
-    tag: app_version
+    tag: 2026-09-16.531.793d147
     port: 8080
 
   ingress:
