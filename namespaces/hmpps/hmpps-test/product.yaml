@@ -1,5 +1,5 @@
 product: hmpps-test
-bu: octo
+bu: hmpps
 owner:
   team: hmpps-sre
   slack: "#ask-hmpps-digital-sre"
