@@ -17,5 +17,5 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: hmpps-test
+        - name: hmpps-hmpps-test-dev
           port: {{ index .Values "generic-service" "service" "port" }}
