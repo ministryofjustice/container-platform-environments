@@ -1,5 +1,5 @@
 namespace: hmpps-test-dev
-host: hmpps-test-dev.octo-nonlive.container-platform.service.justice.gov.uk
+host: hmpps-test-dev.hmpps-nonlive.container-platform.service.justice.gov.uk
 
 generic-service:
   replicaCount: 2
