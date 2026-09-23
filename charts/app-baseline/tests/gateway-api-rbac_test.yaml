@@ -49,7 +49,7 @@ tests:
             - watch
         documentIndex: 0
 
-  - it: binds edit access groups to the namespace HTTPRoute read role
+  - it: binds matching access groups to the namespace HTTPRoute read role
     set:
       targetCluster: container-platform-octo-nonlive
     asserts:
@@ -74,7 +74,7 @@ tests:
           value: gateway-api-routes-read
         documentIndex: 1
 
-  - it: binds view access groups to the namespace HTTPRoute read role
+  - it: binds view-only access groups to the same namespace HTTPRoute read role
     set:
       targetCluster: container-platform-octo-nonlive
       access:
@@ -94,6 +94,7 @@ tests:
     asserts:
       - hasDocuments:
           count: 0
+
 
   - it: renders nothing when access list is empty
     set:

@@ -1,13 +1,13 @@
 {{- include "app-baseline.validateAccess" $ -}}
 {{- range $env := .Values.environments }}
 {{- if eq $env.cluster $.Values.targetCluster }}
-{{- $namespaceAccess := list }}
+{{- $namespaceGroups := dict }}
 {{- range $.Values.access }}
 {{- if has $env.cluster .clusters }}
-{{- $namespaceAccess = append $namespaceAccess . }}
+{{- $_ := set $namespaceGroups .group .group }}
 {{- end }}
 {{- end }}
-{{- if $namespaceAccess }}
+{{- if $namespaceGroups }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
@@ -22,12 +22,12 @@ rules:
   - apiGroups: ["gateway.networking.k8s.io"]
     resources: ["httproutes"]
     verbs: ["get", "list", "watch"]
-{{- range $namespaceAccess }}
+{{- range $group := keys $namespaceGroups | sortAlpha }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: {{ .group }}-gateway-api-routes
+  name: {{ $group }}-gateway-api-routes
   namespace: {{ $env.namespace }}
   labels:
     container-platform/bu: {{ $.Values.bu | quote }}
@@ -35,7 +35,7 @@ metadata:
     container-platform/managed-by: "app-baseline"
 subjects:
   - kind: Group
-    name: {{ .group }}
+    name: {{ $group }}
     apiGroup: rbac.authorization.k8s.io
 roleRef:
   kind: Role
@@ -44,4 +44,5 @@ roleRef:
 {{- end }}
 {{- end }}
 {{- end }}
+
 {{- end }}
