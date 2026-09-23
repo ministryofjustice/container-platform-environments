@@ -1,0 +1,104 @@
+suite: Gateway API RBAC rendering
+templates:
+  - gateway-api-rbac.yaml
+values:
+  - ../tests/fixtures/helloworld-nonlive.yaml
+tests:
+  - it: creates namespace-scoped HTTPRoute roles and bindings for each matching namespace
+    set:
+      targetCluster: container-platform-octo-nonlive
+    asserts:
+      - hasDocuments:
+          count: 4
+      - isKind:
+          of: Role
+        documentIndex: 0
+      - isKind:
+          of: RoleBinding
+        documentIndex: 1
+      - equal:
+          path: metadata.namespace
+          value: helloworld-dev
+        documentIndex: 0
+      - equal:
+          path: metadata.namespace
+          value: helloworld-staging
+        documentIndex: 2
+
+  - it: grants read-only HTTPRoute verbs in the read role
+    set:
+      targetCluster: container-platform-octo-nonlive
+    asserts:
+      - equal:
+          path: metadata.name
+          value: gateway-api-routes-read
+        documentIndex: 0
+      - equal:
+          path: rules[0].apiGroups[0]
+          value: gateway.networking.k8s.io
+        documentIndex: 0
+      - equal:
+          path: rules[0].resources[0]
+          value: httproutes
+        documentIndex: 0
+      - equal:
+          path: rules[0].verbs
+          value:
+            - get
+            - list
+            - watch
+        documentIndex: 0
+
+  - it: binds edit access groups to the namespace HTTPRoute read role
+    set:
+      targetCluster: container-platform-octo-nonlive
+    asserts:
+      - equal:
+          path: metadata.name
+          value: cloud-platform-gateway-api-routes
+        documentIndex: 1
+      - equal:
+          path: metadata.namespace
+          value: helloworld-dev
+        documentIndex: 1
+      - equal:
+          path: subjects[0].name
+          value: cloud-platform
+        documentIndex: 1
+      - equal:
+          path: roleRef.kind
+          value: Role
+        documentIndex: 1
+      - equal:
+          path: roleRef.name
+          value: gateway-api-routes-read
+        documentIndex: 1
+
+  - it: binds view access groups to the namespace HTTPRoute read role
+    set:
+      targetCluster: container-platform-octo-nonlive
+      access:
+        - group: cloud-platform
+          role: view
+          clusters:
+            - container-platform-octo-nonlive
+    asserts:
+      - equal:
+          path: roleRef.name
+          value: gateway-api-routes-read
+        documentIndex: 1
+
+  - it: renders nothing when no access entries match the cluster
+    set:
+      targetCluster: container-platform-octo-live
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: renders nothing when access list is empty
+    set:
+      targetCluster: container-platform-octo-nonlive
+      access: []
+    asserts:
+      - hasDocuments:
+          count: 0
