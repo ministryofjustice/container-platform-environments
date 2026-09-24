@@ -1,13 +1,14 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: dns-testapp
+  name: myapp
 spec:
   parentRefs:
-    - name: dns-testapp
+    - name: {{ .Values.gateway.name }}-listenerset
+      namespace: {{ .Values.gateway.namespace }}
       kind: ListenerSet
       group: gateway.networking.k8s.io
-      sectionName: https
+      sectionName: {{ .Values.gateway.sectionName }}
   hostnames:
     - {{ required "host must be configured" .Values.host | quote }}
   rules:
@@ -16,5 +17,5 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: dns-testapp
+        - name: myapp
           port: {{ .Values.service.port }}

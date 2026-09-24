@@ -1,0 +1,19 @@
+# Default values for test-app-backend. Overridden per environment by values/<tier>/<env>.yaml
+replicaCount: 1
+
+# Image is pinned by digest (not tag) for supply-chain integrity.
+image:
+  repository: ghcr.io/ministryofjustice/container-platform-test-app-backend
+  digest: sha256:825048cfd582f0b2e2fa954b3819d0965fbad3d78dada81496511377b310679e
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
+
+service:
+  port: 8080
+  targetPort: 8080

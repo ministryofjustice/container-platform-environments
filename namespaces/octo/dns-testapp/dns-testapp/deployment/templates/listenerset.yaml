@@ -1,0 +1,25 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: ListenerSet
+metadata:
+  name: dns-testapp
+  annotations:
+    cert-manager.io/cluster-issuer: {{ .Values.tls.clusterIssuer | quote }}
+spec:
+  parentRef:
+    name: {{ .Values.gateway.name }}
+    namespace: {{ .Values.gateway.namespace }}
+    group: gateway.networking.k8s.io
+    kind: Gateway
+  listeners:
+    - name: https
+      hostname: {{ required "host must be configured" .Values.host | quote }}
+      protocol: HTTPS
+      port: 443
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: dns-testapp-tls
+            kind: Secret
+      allowedRoutes:
+        namespaces:
+          from: Same

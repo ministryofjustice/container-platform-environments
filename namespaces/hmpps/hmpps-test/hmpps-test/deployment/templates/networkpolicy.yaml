@@ -1,0 +1,20 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: hmpps-test-allow-gateway
+  labels:
+    app: hmpps-test
+spec:
+  podSelector:
+    matchLabels:
+      app: hmpps-test
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: envoy-gateway-system
+      ports:
+        - protocol: TCP
+          port: {{ index .Values "generic-service" "image" "port" }}
