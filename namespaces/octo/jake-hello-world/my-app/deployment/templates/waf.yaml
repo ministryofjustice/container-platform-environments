@@ -1,0 +1,20 @@
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyExtensionPolicy
+metadata:
+  name: my-app-waf
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: my-app
+  dynamicModule:
+    - name: composer
+      filterName: coraza-waf
+      config:
+        directives:
+          - Include @coraza.conf
+          - SecRuleEngine On
+          - Include @crs-setup.conf
+          - SecRule REQUEST_FILENAME "@rx ^/exports/.*\.log$" "id:1500000,phase:1,pass,nolog,ctl:ruleRemoveById=920440"
+          - Include @owasp_crs/*.conf
+          - Include /etc/coraza/cp/coraza-cp.conf

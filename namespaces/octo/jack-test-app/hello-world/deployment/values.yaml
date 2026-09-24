@@ -1,0 +1,23 @@
+# Default values for my-app. Overridden per environment by values/<tier>/<env>.yaml
+replicaCount: 1
+
+image:
+  repository: nginxinc/nginx-unprivileged
+  tag: "1.31.6"
+  digest: "sha256:31e97ebaac04c19c8e7da6012c5776e86a4414695565200719d6113cb68d0b78"
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
+
+service:
+  port: 80
+  targetPort: 8080
+
+gateway:
+  name: default
+  namespace: envoy-gateway-system
+  sectionName: https
