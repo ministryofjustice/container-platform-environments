@@ -1,7 +1,7 @@
 product: teams-backgrounds
 bu: octo
 owner:
-  team: teams-custom-background
+  team: octo
   slack: "#container-platform-alpha-users"
   source: https://github.com/ministryofjustice/JDDS-Teams-Backgrounds
 environments:
@@ -10,7 +10,17 @@ environments:
     namespace: teams-backgrounds-dev
     is_production: false
 access:
-  - group: teams-custom-background
+  - group: octo
+    role: edit
+    clusters:
+      - container-platform-octo-nonlive
+access:
+  - group: octo
+    role: edit
+    clusters:
+      - container-platform-octo-nonlive
+access:
+  - group: octo
     role: edit
     clusters:
       - container-platform-octo-nonlive
