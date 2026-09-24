@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: emma-testapp
+  labels:
+    app: emma-testapp
+spec:
+  selector:
+    app: emma-testapp
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}
+      protocol: TCP
