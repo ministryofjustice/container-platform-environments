@@ -1,0 +1,16 @@
+product: teams-backgrounds
+bu: octo
+owner:
+  team: custom-teams-backgrounds-admin
+  slack: "#container-platform-alpha-users"
+  source: https://github.com/ministryofjustice/JDDS-Teams-Backgrounds
+environments:
+  - name: dev
+    cluster: container-platform-octo-nonlive
+    namespace: teams-backgrounds-dev
+    is_production: false
+access:
+  - group: custom-teams-backgrounds-admin
+    role: edit
+    clusters:
+      - container-platform-octo-nonlive
