@@ -1,10 +1,11 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: dns-testapp
+  name: dan-testapp
 spec:
   parentRefs:
-    - name: dns-testapp
+    - name: default-listenerset
+      namespace: envoy-gateway-system
       kind: ListenerSet
       group: gateway.networking.k8s.io
       sectionName: https
@@ -16,5 +17,5 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: dns-testapp
+        - name: dan-testapp
           port: {{ .Values.service.port }}

@@ -1,0 +1,9 @@
+# Routing metadata (the `namespace` key is consumed by the workload ApplicationSet)
+namespace: test-app-dev
+
+# Helm value overrides for dev
+replicaCount: 1
+host: test-app.octo-nonlive.container-platform.service.justice.gov.uk
+gateway:
+  name: default
+  namespace: envoy-gateway-system

@@ -1,26 +1,26 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: dns-testapp
+  name: dan-testapp
   labels:
-    app: dns-testapp
+    app: dan-testapp
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: dns-testapp
+      app: dan-testapp
   template:
     metadata:
       labels:
-        app: dns-testapp
+        app: dan-testapp
     spec:
       securityContext:
         runAsNonRoot: true
         seccompProfile:
           type: RuntimeDefault
       containers:
-        - name: dns-testapp
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}{{ if .Values.image.digest }}@{{ .Values.image.digest }}{{ end }}"
+        - name: dan-testapp
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}@{{ .Values.image.digest }}"
           ports:
             - containerPort: {{ .Values.service.targetPort }}
           securityContext:

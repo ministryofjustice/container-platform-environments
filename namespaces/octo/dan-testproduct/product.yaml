@@ -1,22 +1,15 @@
-product: dave-hello-world
+product: dan-testproduct
 bu: octo
 owner:
   team: cloud-platform
   slack: "#cloud-platform"
   source: https://github.com/ministryofjustice/container-platform-environments
-
 environments:
   - name: dev
     cluster: container-platform-octo-nonlive
-    namespace: dave-hello-world-dev
+    namespace: dan-testproduct-dev
     is_production: false
-  - name: staging
-    cluster: container-platform-octo-nonlive
-    namespace: dave-hello-world-staging
-    is_production: false
-
 access:
-  # Non-live: edit access for development workflows
   - group: cloud-platform-engineers
     role: edit
     clusters:

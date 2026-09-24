@@ -1,11 +1,10 @@
-# Default values for dns-testapp. Overridden per environment by values/<tier>/<env>.yaml
+# Default values for my-app. Overridden per environment by values/<tier>/<env>.yaml
 replicaCount: 1
 
 image:
   repository: nginxinc/nginx-unprivileged
   tag: "1.31.4"
   digest: "sha256:343fac1d3d5f58078a466e70108f77f3ce3ce4a097ee91ab2c5097a776869414"
-
 resources:
   requests:
     cpu: 50m
@@ -21,4 +20,4 @@ service:
 gateway:
   name: default
   namespace: envoy-gateway-system
-  sectionName: http
+  sectionName: https
