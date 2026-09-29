@@ -3,3 +3,4 @@
 /namespaces/octo/**    @ministryofjustice/office-of-the-cto @ministryofjustice/cloud-platform-engineers
 /namespaces/laa/**     @ministryofjustice/laa @ministryofjustice/cloud-platform-engineers
 /namespaces/cd/**      @ministryofjustice/central-digital
+**/product.yaml        @ministryofjustice/cloud-platform-engineers
