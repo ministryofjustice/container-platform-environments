@@ -1,1 +1,5 @@
 *   @ministryofjustice/cloud-platform
+/namespaces/hmpps/**   @ministryofjustice/hmpps-developers @ministryofjustice/cloud-platform-engineers
+/namespaces/octo/**    @ministryofjustice/office-of-the-cto @ministryofjustice/cloud-platform-engineers
+/namespaces/laa/**     @ministryofjustice/laa @ministryofjustice/cloud-platform-engineers
+/namespaces/cd/**      @ministryofjustice/central-digital
