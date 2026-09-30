@@ -1,11 +1,11 @@
-name: Hello World Matrix
+name: User Terraform Plan
 
 on:
   push:
     branches:
       - jb-user-resource-workflow-testing
     paths:
-      - '.github/workflows/hello-world-matrix.yml'
+      - '.github/workflows/user-terraform-plan.yml'
       - 'cmd/product-config/**'
       - 'namespaces/octo/jake-hello-world/product.yaml'
       - 'namespaces/octo/jake-hello-world/resources/**'
