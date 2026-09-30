@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -28,7 +29,7 @@ environments:
 `)
 
 	var stdout, stderr bytes.Buffer
-	if code := run([]string{"matrix", manifestPath}, &stdout, &stderr); code != 0 {
+	if code := run([]string{"matrix", manifestPath}, strings.NewReader(""), &stdout, &stderr); code != 0 {
 		t.Fatalf("run returned %d: %s", code, stderr.String())
 	}
 
@@ -60,8 +61,49 @@ environments:
 `)
 
 	var stdout, stderr bytes.Buffer
-	if code := run([]string{"validate", manifestPath}, &stdout, &stderr); code == 0 {
+	if code := run([]string{"validate", manifestPath}, strings.NewReader(""), &stdout, &stderr); code == 0 {
 		t.Fatal("validate succeeded for duplicate environment names")
+	}
+}
+
+func TestMatrixChangesFindsProductFromResourcePaths(t *testing.T) {
+	root := t.TempDir()
+	productDir := filepath.Join(root, "namespaces", "octo", "sample")
+	if err := os.MkdirAll(filepath.Join(productDir, "resources"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	manifestPath := filepath.Join(productDir, "product.yaml")
+	if err := os.WriteFile(manifestPath, []byte(`
+product: sample
+bu: octo
+environments:
+  - name: dev
+    cluster: container-platform-octo-nonlive
+    namespace: sample-dev
+    is_production: false
+  - name: prod
+    cluster: container-platform-octo-live
+    namespace: sample-prod
+    is_production: true
+`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	changedPaths := strings.NewReader("namespaces/octo/sample/resources/main.tf\nnamespaces/octo/sample/resources/versions.tf\nnamespaces/octo/sample/product.yaml\nREADME.md\n")
+	var stdout, stderr bytes.Buffer
+	if code := run([]string{"matrix-changes", root}, changedPaths, &stdout, &stderr); code != 0 {
+		t.Fatalf("run returned %d: %s", code, stderr.String())
+	}
+
+	var output matrixOutput
+	if err := json.Unmarshal(stdout.Bytes(), &output); err != nil {
+		t.Fatalf("decode matrix JSON: %v", err)
+	}
+	if len(output.Include) != 2 {
+		t.Fatalf("got %d targets, want 2", len(output.Include))
+	}
+	if got := []string{output.Include[0].Environment, output.Include[1].Environment}; !reflect.DeepEqual(got, []string{"dev", "prod"}) {
+		t.Fatalf("got environments %v", got)
 	}
 }
 

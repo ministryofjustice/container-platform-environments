@@ -1,11 +1,14 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
+	"sort"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -38,12 +41,20 @@ type matrixTarget struct {
 }
 
 func main() {
-	os.Exit(run(os.Args[1:], os.Stdout, os.Stderr))
+	os.Exit(run(os.Args[1:], os.Stdin, os.Stdout, os.Stderr))
 }
 
-func run(args []string, stdout, stderr io.Writer) int {
+func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	if len(args) != 2 || (args[0] != "validate" && args[0] != "matrix") {
-		fmt.Fprintln(stderr, "usage: product-config <validate|matrix> <product.yaml>")
+		if len(args) == 2 && args[0] == "matrix-changes" {
+			output, err := matrixForChangedPaths(args[1], stdin)
+			if err != nil {
+				fmt.Fprintln(stderr, err)
+				return 1
+			}
+			return writeMatrix(output, stdout, stderr)
+		}
+		fmt.Fprintln(stderr, "usage: product-config <validate|matrix> <product.yaml> | matrix-changes <repo-root> (changed paths on stdin)")
 		return 2
 	}
 
@@ -60,23 +71,70 @@ func run(args []string, stdout, stderr io.Writer) int {
 	case "validate":
 		fmt.Fprintf(stdout, "valid product %s: %d environment(s)\n", manifest.Product, len(manifest.Environments))
 	case "matrix":
-		output := matrixOutput{Include: make([]matrixTarget, 0, len(manifest.Environments))}
-		for _, environment := range manifest.Environments {
-			output.Include = append(output.Include, matrixTarget{
-				Product:      manifest.Product,
-				BU:           manifest.BU,
-				Environment:  environment.Name,
-				Cluster:      environment.Cluster,
-				Namespace:    environment.Namespace,
-				IsProduction: *environment.IsProduction,
-			})
-		}
-		if err := json.NewEncoder(stdout).Encode(output); err != nil {
-			fmt.Fprintln(stderr, err)
-			return 1
-		}
+		return writeMatrix(matrixForProduct(manifest), stdout, stderr)
 	}
 
+	return 0
+}
+
+func matrixForChangedPaths(root string, changedPaths io.Reader) (matrixOutput, error) {
+	productDirs := make(map[string]struct{})
+	scanner := bufio.NewScanner(changedPaths)
+	for scanner.Scan() {
+		parts := strings.Split(filepath.ToSlash(filepath.Clean(scanner.Text())), "/")
+		isProductManifest := len(parts) == 4 && parts[3] == "product.yaml"
+		isResourceFile := len(parts) >= 5 && parts[3] == "resources"
+		if len(parts) >= 4 && parts[0] == "namespaces" && (isProductManifest || isResourceFile) {
+			productDirs[filepath.Join(root, parts[0], parts[1], parts[2], "product.yaml")] = struct{}{}
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return matrixOutput{}, fmt.Errorf("read changed paths: %w", err)
+	}
+	if len(productDirs) == 0 {
+		return matrixOutput{}, errors.New("no changed resource files found under namespaces/<bu>/<product>/resources/")
+	}
+
+	manifestPaths := make([]string, 0, len(productDirs))
+	for path := range productDirs {
+		manifestPaths = append(manifestPaths, path)
+	}
+	sort.Strings(manifestPaths)
+
+	output := matrixOutput{Include: []matrixTarget{}}
+	for _, path := range manifestPaths {
+		manifest, err := loadProduct(path)
+		if err != nil {
+			return matrixOutput{}, err
+		}
+		if err := validateProduct(manifest); err != nil {
+			return matrixOutput{}, fmt.Errorf("%s: %w", path, err)
+		}
+		output.Include = append(output.Include, matrixForProduct(manifest).Include...)
+	}
+	return output, nil
+}
+
+func matrixForProduct(manifest productManifest) matrixOutput {
+	output := matrixOutput{Include: make([]matrixTarget, 0, len(manifest.Environments))}
+	for _, environment := range manifest.Environments {
+		output.Include = append(output.Include, matrixTarget{
+			Product:      manifest.Product,
+			BU:           manifest.BU,
+			Environment:  environment.Name,
+			Cluster:      environment.Cluster,
+			Namespace:    environment.Namespace,
+			IsProduction: *environment.IsProduction,
+		})
+	}
+	return output
+}
+
+func writeMatrix(output matrixOutput, stdout, stderr io.Writer) int {
+	if err := json.NewEncoder(stdout).Encode(output); err != nil {
+		fmt.Fprintln(stderr, err)
+		return 1
+	}
 	return 0
 }
 
