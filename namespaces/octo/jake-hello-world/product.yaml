@@ -9,6 +9,16 @@ environments:
     cluster: container-platform-octo-nonlive
     namespace: jake-hello-world-dev
     is_production: false
+
+  - name: staging
+    cluster: container-platform-octo-nonlive
+    namespace: jake-hello-world-staging
+    is_production: false
+
+  - name: prod
+    cluster: container-platform-octo-live
+    namespace: jake-hello-world-prod
+    is_production: true
 access:
   - group: cloud-platform-engineers
     role: edit
