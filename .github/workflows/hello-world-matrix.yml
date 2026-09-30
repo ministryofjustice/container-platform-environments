@@ -1,6 +1,14 @@
 name: Hello World Matrix
 
 on:
+  push:
+    branches:
+      - jb-user-resource-workflow-testing
+    paths:
+      - '.github/workflows/hello-world-matrix.yml'
+      - 'cmd/product-config/**'
+      - 'namespaces/octo/jake-hello-world/product.yaml'
+      - 'namespaces/octo/jake-hello-world/resources/**'
   workflow_dispatch:
     inputs:
       product_file:
@@ -28,7 +36,7 @@ jobs:
       - name: Define environments
         id: environments
         env:
-          PRODUCT_FILE: ${{ inputs.product_file }}
+          PRODUCT_FILE: ${{ inputs.product_file || 'namespaces/octo/jake-hello-world/product.yaml' }}
         working-directory: cmd/product-config
         run: |
           if [[ ! "$PRODUCT_FILE" =~ ^namespaces/[^/]+/[^/]+/product\.yaml$ ]]; then
