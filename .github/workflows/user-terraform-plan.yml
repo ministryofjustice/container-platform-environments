@@ -57,7 +57,7 @@ jobs:
 
   plan:
     needs: discover
-    name: ${{ matrix.product }} / ${{ matrix.environment }}
+    name: ${{ matrix.bu }} / ${{ matrix.product }} / ${{ matrix.environment }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
