@@ -2,4 +2,4 @@ namespace: teams-backgrounds-dev
 host: teams-backgrounds.octo-nonlive.container-platform.service.justice.gov.uk
 image:
   repository: ghcr.io/ministryofjustice/jdds-teams-backgrounds
-  digest: sha256:4c656d0e3a4fbfd817e7f7955d49607ece95b6f2b80771e041e0f61ffff97bf3
+  digest: sha256:ee479e39a3e08eb55b1527cc31ee7a54b5a0f10b0c54b8eec550ef7f5934c39f
