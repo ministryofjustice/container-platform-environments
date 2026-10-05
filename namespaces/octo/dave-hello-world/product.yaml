@@ -10,10 +10,12 @@ environments:
     cluster: container-platform-octo-nonlive
     namespace: dave-hello-world-dev
     is_production: false
+    allow_pr_deployment: false
   - name: staging
     cluster: container-platform-octo-nonlive
     namespace: dave-hello-world-staging
     is_production: false
+    allow_pr_deployment: false
 
 access:
   # Non-live: edit access for development workflows

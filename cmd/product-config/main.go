@@ -21,10 +21,11 @@ type productManifest struct {
 }
 
 type environment struct {
-	Name         string `yaml:"name"`
-	Cluster      string `yaml:"cluster"`
-	Namespace    string `yaml:"namespace"`
-	IsProduction *bool  `yaml:"is_production"`
+	Name              string `yaml:"name"`
+	Cluster           string `yaml:"cluster"`
+	Namespace         string `yaml:"namespace"`
+	IsProduction      *bool  `yaml:"is_production"`
+	AllowPRDeployment bool   `yaml:"allow_pr_deployment"`
 }
 
 type matrixOutput struct {
@@ -32,12 +33,13 @@ type matrixOutput struct {
 }
 
 type matrixTarget struct {
-	Product      string `json:"product"`
-	BU           string `json:"bu"`
-	Environment  string `json:"environment"`
-	Cluster      string `json:"cluster"`
-	Namespace    string `json:"namespace"`
-	IsProduction bool   `json:"is_production"`
+	Product           string `json:"product"`
+	BU                string `json:"bu"`
+	Environment       string `json:"environment"`
+	Cluster           string `json:"cluster"`
+	Namespace         string `json:"namespace"`
+	IsProduction      bool   `json:"is_production"`
+	AllowPRDeployment bool   `json:"allow_pr_deployment"`
 }
 
 func main() {
@@ -119,12 +121,13 @@ func matrixForProduct(manifest productManifest) matrixOutput {
 	output := matrixOutput{Include: make([]matrixTarget, 0, len(manifest.Environments))}
 	for _, environment := range manifest.Environments {
 		output.Include = append(output.Include, matrixTarget{
-			Product:      manifest.Product,
-			BU:           manifest.BU,
-			Environment:  environment.Name,
-			Cluster:      environment.Cluster,
-			Namespace:    environment.Namespace,
-			IsProduction: *environment.IsProduction,
+			Product:           manifest.Product,
+			BU:                manifest.BU,
+			Environment:       environment.Name,
+			Cluster:           environment.Cluster,
+			Namespace:         environment.Namespace,
+			IsProduction:      *environment.IsProduction,
+			AllowPRDeployment: environment.AllowPRDeployment,
 		})
 	}
 	return output

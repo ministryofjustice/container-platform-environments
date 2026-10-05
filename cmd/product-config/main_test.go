@@ -17,15 +17,7 @@ bu: octo
 owner:
   team: sample-team
 access: []
-environments:
-  - name: quality-assurance
-    cluster: container-platform-octo-nonlive
-    namespace: sample-qa
-    is_production: false
-  - name: production
-    cluster: container-platform-octo-live
-    namespace: sample-production
-    is_production: true
+environments: [{name: quality-assurance, cluster: container-platform-octo-nonlive, namespace: sample-qa, is_production: false, allow_pr_deployment: true}, {name: production, cluster: container-platform-octo-live, namespace: sample-production, is_production: true, allow_pr_deployment: false}]
 `)
 
 	var stdout, stderr bytes.Buffer
@@ -39,6 +31,9 @@ environments:
 	}
 	if len(output.Include) != 2 {
 		t.Fatalf("got %d targets, want 2", len(output.Include))
+	}
+	if !output.Include[0].AllowPRDeployment || output.Include[1].AllowPRDeployment {
+		t.Fatal("matrix targets should preserve each environment's pull request deployment setting")
 	}
 	if got := []string{output.Include[0].Environment, output.Include[1].Environment}; !reflect.DeepEqual(got, []string{"quality-assurance", "production"}) {
 		t.Fatalf("got environments %v", got)
@@ -101,6 +96,9 @@ environments:
 	}
 	if len(output.Include) != 2 {
 		t.Fatalf("got %d targets, want 2", len(output.Include))
+	}
+	if output.Include[0].AllowPRDeployment || output.Include[1].AllowPRDeployment {
+		t.Fatal("matrix targets should disallow pull request deployments by default")
 	}
 	if got := []string{output.Include[0].Environment, output.Include[1].Environment}; !reflect.DeepEqual(got, []string{"dev", "prod"}) {
 		t.Fatalf("got environments %v", got)
