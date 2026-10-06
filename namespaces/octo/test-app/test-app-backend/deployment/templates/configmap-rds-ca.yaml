@@ -1,0 +1,13 @@
+{{- if .Values.database.enabled }}
+# Public AWS RDS trust anchors for eu-west-2, used to verify the database TLS certificate.
+# Source: https://truststore.pki.rds.amazonaws.com/eu-west-2/eu-west-2-bundle.pem
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.database.caConfigMapName }}
+  labels:
+    app: test-app-backend
+data:
+  rds-ca.pem: |
+{{ .Files.Get "files/rds-ca.pem" | indent 4 }}
+{{- end }}

@@ -25,6 +25,18 @@ spec:
           image: "{{ .Values.image.repository }}@{{ .Values.image.digest }}"
           ports:
             - containerPort: {{ .Values.service.targetPort }}
+          {{- if .Values.database.enabled }}
+          env:
+            - name: PGSSLROOTCERT
+              value: {{ .Values.database.caMountPath }}/rds-ca.pem
+          envFrom:
+            - secretRef:
+                name: {{ .Values.database.secretName }}
+          volumeMounts:
+            - name: rds-ca
+              mountPath: {{ .Values.database.caMountPath }}
+              readOnly: true
+          {{- end }}
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -49,3 +61,9 @@ spec:
             limits:
               cpu: {{ .Values.resources.limits.cpu }}
               memory: {{ .Values.resources.limits.memory }}
+      {{- if .Values.database.enabled }}
+      volumes:
+        - name: rds-ca
+          configMap:
+            name: {{ .Values.database.caConfigMapName }}
+      {{- end }}
