@@ -26,7 +26,10 @@ spec:
           ports:
             - containerPort: {{ .Values.service.targetPort }}
           {{- if .Values.database.enabled }}
+          # Set here rather than only in the secret so the chart, not manual state, enforces TLS verification.
           env:
+            - name: PGSSLMODE
+              value: verify-full
             - name: PGSSLROOTCERT
               value: {{ .Values.database.caMountPath }}/rds-ca.pem
           envFrom:
