@@ -3,3 +3,7 @@ namespace: test-app-dev
 
 # Helm value overrides for dev
 replicaCount: 1
+
+# Demo database on CP2, reached over the transit gateway.
+database:
+  enabled: true

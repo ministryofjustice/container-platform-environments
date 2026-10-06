@@ -17,3 +17,11 @@ resources:
 service:
   port: 8080
   targetPort: 8080
+
+# Off by default so environments without a database deploy unchanged.
+database:
+  enabled: false
+  # Created out of band with kubectl: there is no secrets operator on CP3 yet.
+  secretName: test-app-db
+  caConfigMapName: test-app-rds-ca
+  caMountPath: /etc/rds
