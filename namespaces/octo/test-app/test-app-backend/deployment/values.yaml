@@ -4,7 +4,7 @@ replicaCount: 1
 # Image is pinned by digest (not tag) for supply-chain integrity.
 image:
   repository: ghcr.io/ministryofjustice/container-platform-test-app-backend
-  digest: sha256:825048cfd582f0b2e2fa954b3819d0965fbad3d78dada81496511377b310679e
+  digest: sha256:fa965b01727546dca7af82f627549654eb4033f1179e892e6f24b71130648c2e
 
 resources:
   requests:
