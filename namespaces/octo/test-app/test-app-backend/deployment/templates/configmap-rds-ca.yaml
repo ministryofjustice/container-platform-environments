@@ -1,6 +1,7 @@
 {{- if .Values.database.enabled }}
 # Public AWS RDS trust anchors for eu-west-2, used to verify the database TLS certificate.
-# Source: https://truststore.pki.rds.amazonaws.com/eu-west-2/eu-west-2-bundle.pem
+# Source: the Europe (London) PEM bundle listed in the certificate bundles table at
+# https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.SSL.html#UsingWithRDS.SSL.CertificatesAllRegions
 # Public certificates, so a ConfigMap rather than a Secret. Credentials live in the test-app-db Secret.
 apiVersion: v1
 kind: ConfigMap
