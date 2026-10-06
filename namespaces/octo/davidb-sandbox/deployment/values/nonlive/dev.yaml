@@ -1,3 +1,3 @@
-namespace: my-product-dev
+namespace: davidb-sandbox-dev
 replicaCount: 1
 host: davidb-sandbox-dev.octo-nonlive.container-platform.service.justice.gov.uk
