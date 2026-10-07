@@ -1,6 +1,6 @@
 apiVersion: v2
-name: davidb-sandbox
-description: davidb-sandbox service
+name: davidb-nginx-demo
+description: davidb-nginx-demo service
 type: application
 version: 1.0.0
 appVersion: "1.0.0"

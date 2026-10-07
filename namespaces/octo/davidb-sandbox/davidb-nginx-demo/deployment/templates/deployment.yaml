@@ -1,25 +1,25 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: davidb-sandbox
+  name: davidb-nginx-demo
   labels:
-    app: davidb-sandbox
+    app: davidb-nginx-demo
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: davidb-sandbox
+      app: davidb-nginx-demo
   template:
     metadata:
       labels:
-        app: davidb-sandbox
+        app: davidb-nginx-demo
     spec:
       securityContext:
         runAsNonRoot: true
         seccompProfile:
           type: RuntimeDefault
       containers:
-        - name: davidb-sandbox
+        - name: davidb-nginx-demo
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}@{{ .Values.image.digest }}"
           ports:
             - containerPort: {{ .Values.service.targetPort }}
