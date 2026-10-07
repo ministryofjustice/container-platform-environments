@@ -1,4 +1,4 @@
-# Default values for my-app. Overridden per environment by values/<tier>/<env>.yaml
+# Default values for davidb-nginx-demo. Overridden per environment by values/<tier>/<env>.yaml
 replicaCount: 1
 
 image:
