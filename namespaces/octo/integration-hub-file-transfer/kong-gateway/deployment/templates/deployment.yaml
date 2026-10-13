@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Chart.Name | quote }}
+  labels:
+    app: {{ .Chart.Name | quote }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name | quote }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name | quote }}
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: {{ .Chart.Name | quote }}
+          {{- if .Values.image.digest }}
+          image: {{ printf "%s:%s@%s" .Values.image.repository .Values.image.tag .Values.image.digest | quote }}
+          {{- else }}
+          image: {{ printf "%s:%s" .Values.image.repository .Values.image.tag | quote }}
+          {{- end }}
+          {{- with .Values.kong }}
+          env:
+            - name: KONG_DATABASE
+              value: "off"
+            - name: KONG_DECLARATIVE_CONFIG
+              value: /kong/declarative/kong.yml
+            - name: KONG_ADMIN_LISTEN
+              value: "off"
+            - name: KONG_NGINX_USER
+              value: kong
+            - name: KONG_PROXY_LISTEN
+              value: "0.0.0.0:8000"
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+          {{- if .Values.kong }}
+          volumeMounts:
+            - name: kong-declarative-config
+              mountPath: /kong/declarative
+              readOnly: true
+          {{- end }}
+          securityContext:
+            {{- with .Values.containerSecurityContext.runAsUser }}
+            runAsUser: {{ . }}
+            {{- end }}
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- if .Values.kong }}
+      volumes:
+        - name: kong-declarative-config
+          configMap:
+            name: {{ .Chart.Name }}-config
+      {{- end }}
