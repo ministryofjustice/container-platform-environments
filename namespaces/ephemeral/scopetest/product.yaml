@@ -19,8 +19,9 @@ environments:
     namespace: scopetest-dev
     is_production: false
 
-access:
-  - group: cloud-platform
-    role: edit
-    clusters:
-      - cp-1310-1459-spoke
+# No access block on purpose. The access[] entries drive permanent-cluster SSO
+# EKS access-entry wiring (identity/terraform), which indexes a fixed map of
+# real account IDs by cluster name — an ephemeral spoke is not in that map, so
+# listing it there fails the identity plan. The scoping test needs only the
+# namespace + workload Applications, not team RoleBindings, so access is omitted.
+access: []
