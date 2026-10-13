@@ -1,4 +1,25 @@
 {{/*
+Validation for product identity.
+
+The chart stamps container-platform/bu and container-platform/product onto
+every namespace and namespaced resource it renders. Those labels are the key
+the platform's BU-boundary admission policy matches on (ValidatingAdmissionPolicy
+argocd-bu-namespace-boundary), so an empty value is not cosmetic: a namespace
+rendered with container-platform/bu="" is denied by that policy under
+failurePolicy: Fail, wedging the product's baseline sync with an opaque
+admission error. Both values come from product.yaml and default to "" in
+values.yaml, so fail the render early with a clear message if either is unset.
+*/}}
+{{- define "app-baseline.validateProduct" -}}
+{{- if not .Values.bu }}
+{{- fail "app-baseline: product.yaml must set `bu` (the business unit, e.g. octo). It labels every namespace and is required by the BU-boundary admission policy." }}
+{{- end }}
+{{- if not .Values.product }}
+{{- fail "app-baseline: product.yaml must set `product` (the product name). It labels every namespace and resource this chart renders." }}
+{{- end }}
+{{- end -}}
+
+{{/*
 Validation for access declarations.
 
 Enforces the live environment security model: production environments should

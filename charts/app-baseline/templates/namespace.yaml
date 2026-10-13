@@ -1,3 +1,4 @@
+{{- include "app-baseline.validateProduct" $ -}}
 {{- range .Values.environments }}
 {{- if eq .cluster $.Values.targetCluster }}
 ---

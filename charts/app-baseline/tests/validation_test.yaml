@@ -205,3 +205,49 @@ tests:
     asserts:
       - hasDocuments:
           count: 1
+
+  # --- Product identity validation ---
+
+  - it: rejects a missing bu
+    set:
+      product: testprod
+      bu: ""
+      owner:
+        team: test
+        slack: "#test"
+      targetCluster: container-platform-octo-nonlive
+      environments:
+        - name: dev
+          cluster: container-platform-octo-nonlive
+          namespace: testprod-dev
+          is_production: false
+      access:
+        - group: test-team
+          role: view
+          clusters:
+            - container-platform-octo-nonlive
+    asserts:
+      - failedTemplate:
+          errorMessage: "app-baseline: product.yaml must set `bu` (the business unit, e.g. octo). It labels every namespace and is required by the BU-boundary admission policy."
+
+  - it: rejects a missing product
+    set:
+      product: ""
+      bu: octo
+      owner:
+        team: test
+        slack: "#test"
+      targetCluster: container-platform-octo-nonlive
+      environments:
+        - name: dev
+          cluster: container-platform-octo-nonlive
+          namespace: testprod-dev
+          is_production: false
+      access:
+        - group: test-team
+          role: view
+          clusters:
+            - container-platform-octo-nonlive
+    asserts:
+      - failedTemplate:
+          errorMessage: "app-baseline: product.yaml must set `product` (the product name). It labels every namespace and resource this chart renders."
