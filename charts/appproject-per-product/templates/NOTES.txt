@@ -1,0 +1,19 @@
+appproject-per-product rendered for {{ .Values.bu }}/{{ .Values.productDir }} ({{ .Values.environment }}).
+
+Two behaviours worth knowing:
+
+1. Empty-tier skip (cloud-platform#8603 review item 2). The chart renders ONE
+   AppProject only when the product declares at least one environment on the
+   target cluster ({{ .Values.targetCluster }}). When no environment matches the
+   tier, the chart renders nothing at all — not an AppProject with an empty
+   destinations list. A product that only exists on nonlive therefore produces
+   no live AppProject, and vice versa.
+
+2. The AppProject name derives from productDir, not product. The name is
+   {{ .Values.bu }}-{{ .Values.productDir }}-{{ .Values.environment }}, built
+   from the product DIRECTORY name (productDir), never from the product.yaml
+   `product:` key (.Values.product). This keeps the name in lockstep with the
+   workload ApplicationSet's spec.project, which also keys off the directory
+   segment — so the project a workload references and the project this chart
+   generates can never diverge. .Values.product is used only for labels and the
+   description.
