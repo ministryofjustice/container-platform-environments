@@ -1,0 +1,34 @@
+# Values injected by the argocd_appproject_products ApplicationSet.
+#
+# product and environments come from the product.yaml valueFile (the same
+# top-level keys app-baseline reads). productDir, bu, environment, targetCluster,
+# server and sourceRepo are passed as scalar Helm parameters by the generator.
+#
+# The AppProject name derives from productDir (the product DIRECTORY name),
+# never from .Values.product, so it stays in lockstep with the workload
+# ApplicationSet's spec.project, which also keys off the directory segment.
+product: ""
+bu: ""
+productDir: ""
+targetCluster: ""
+server: ""
+environment: ""
+# Monorepo URL the per-product project is allowed to sync from (repo + .git).
+sourceRepo: ""
+
+owner:
+  team: ""
+  slack: ""
+
+# Environment declarations from product.yaml — filtered by targetCluster in the
+# template to collect this tier's declared namespaces.
+environments: []
+  # - name: dev
+  #   cluster: container-platform-octo-nonlive
+  #   namespace: helloworld-dev
+  #   is_production: false
+
+# Access declarations from product.yaml — not used by this chart (the per-BU
+# project carries the viewer role); kept so the product.yaml valueFile loads
+# cleanly without unknown-key noise.
+access: []

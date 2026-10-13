@@ -1,0 +1,13 @@
+# Test fixture: davidb-sandbox product (single nonlive namespace with an
+# off-pattern name, so destinations cannot be derived from the product name).
+product: davidb-sandbox
+bu: octo
+owner:
+  team: cloud-platform
+  slack: "#cloud-platform"
+
+environments:
+  - name: dev
+    cluster: container-platform-octo-nonlive
+    namespace: davidb-nginx-demo-dev
+    is_production: false

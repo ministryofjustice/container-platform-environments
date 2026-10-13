@@ -1,0 +1,6 @@
+apiVersion: v2
+name: appproject-per-product
+description: Renders one Argo CD AppProject per product/tier, scoping destinations to the namespaces the product declares in product.yaml
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

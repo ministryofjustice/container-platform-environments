@@ -1,0 +1,98 @@
+{{- include "appproject-per-product.validateProduct" $ -}}
+{{/*
+Collect the namespaces this product declares for the target cluster/tier.
+Same filter app-baseline uses: range environments, keep those whose cluster
+matches targetCluster, then uniq. The AppProject destinations are built from
+exactly this set — never "*".
+*/}}
+{{- $namespaces := list -}}
+{{- range .Values.environments -}}
+{{- if eq .cluster $.Values.targetCluster -}}
+{{- $namespaces = append $namespaces .namespace -}}
+{{- end -}}
+{{- end -}}
+{{- $namespaces = $namespaces | uniq -}}
+{{/*
+Empty-tier skip (cloud-platform#8603 review item 2): if no environment targets
+this cluster, render NOTHING — no AppProject, no empty destinations list.
+*/}}
+{{- if gt (len $namespaces) 0 }}
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: {{ .Values.bu }}-{{ .Values.productDir }}-{{ .Values.environment }}
+  namespace: argocd
+  labels:
+    argocd.argoproj.io/managed-by: terraform
+    container-platform/bu: {{ .Values.bu | quote }}
+    container-platform/product: {{ .Values.product | quote }}
+    container-platform/environment: {{ .Values.environment | quote }}
+spec:
+  description: Workload deployments for {{ .Values.bu }}/{{ .Values.product }} ({{ .Values.environment }})
+  # Generated Applications live in the argocd namespace (apps-in-any-namespace),
+  # so the project must permit argocd as a source namespace.
+  sourceNamespaces:
+    - argocd
+  sourceRepos:
+    - {{ .Values.sourceRepo }}
+    - {{ .Values.sourceRepo }}.git
+  # One destination per declared namespace for this tier — the server-side
+  # allowlist that bounds the workload ApplicationSet's free-form namespace key.
+  destinations:
+{{- range $namespaces }}
+    - server: {{ $.Values.server }}
+      namespace: {{ . }}
+{{- end }}
+  # BU workload projects can only create workload-level resources
+  # (inherited verbatim from argocd_project_bu).
+  namespaceResourceWhitelist:
+    - group: ""
+      kind: ConfigMap
+    - group: ""
+      kind: Secret
+    - group: ""
+      kind: Service
+    - group: ""
+      kind: ServiceAccount
+    - group: ""
+      kind: PersistentVolumeClaim
+    - group: apps
+      kind: Deployment
+    - group: apps
+      kind: StatefulSet
+    - group: apps
+      kind: DaemonSet
+    - group: apps
+      kind: ReplicaSet
+    - group: batch
+      kind: Job
+    - group: batch
+      kind: CronJob
+    - group: autoscaling
+      kind: HorizontalPodAutoscaler
+    - group: policy
+      kind: PodDisruptionBudget
+    - group: networking.k8s.io
+      kind: Ingress
+    - group: networking.k8s.io
+      kind: NetworkPolicy
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+    - group: gateway.networking.k8s.io
+      kind: GRPCRoute
+    - group: gateway.networking.k8s.io
+      kind: ListenerSet
+    - group: gateway.envoyproxy.io
+      kind: EnvoyExtensionPolicy
+  # BU projects cannot create cluster-scoped resources
+  # (inherited verbatim from argocd_project_bu).
+  clusterResourceBlacklist:
+    - group: "*"
+      kind: Namespace
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRoleBinding
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+{{- end }}

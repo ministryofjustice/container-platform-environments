@@ -1,0 +1,187 @@
+suite: Per-product AppProject rendering
+templates:
+  - appproject.yaml
+tests:
+  - it: renders one nonlive AppProject named from bu+productDir+environment
+    values:
+      - ../tests/fixtures/helloworld.yaml
+    set:
+      productDir: helloworld
+      bu: octo
+      environment: nonlive
+      targetCluster: container-platform-octo-nonlive
+      server: arn:aws:eks:eu-west-2:111111111111:cluster/container-platform-octo-nonlive
+      sourceRepo: https://example/repo
+    asserts:
+      - hasDocuments:
+          count: 1
+      - isKind:
+          of: AppProject
+      - equal:
+          path: metadata.name
+          value: octo-helloworld-nonlive
+      - equal:
+          path: metadata.namespace
+          value: argocd
+
+  - it: scopes nonlive destinations to exactly the declared nonlive namespaces
+    values:
+      - ../tests/fixtures/helloworld.yaml
+    set:
+      productDir: helloworld
+      bu: octo
+      environment: nonlive
+      targetCluster: container-platform-octo-nonlive
+      server: arn:aws:eks:eu-west-2:111111111111:cluster/container-platform-octo-nonlive
+      sourceRepo: https://example/repo
+    asserts:
+      - lengthEqual:
+          path: spec.destinations
+          count: 2
+      - contains:
+          path: spec.destinations
+          content:
+            server: arn:aws:eks:eu-west-2:111111111111:cluster/container-platform-octo-nonlive
+            namespace: helloworld-dev
+      - contains:
+          path: spec.destinations
+          content:
+            server: arn:aws:eks:eu-west-2:111111111111:cluster/container-platform-octo-nonlive
+            namespace: helloworld-staging
+      - notContains:
+          path: spec.destinations
+          content:
+            server: arn:aws:eks:eu-west-2:111111111111:cluster/container-platform-octo-nonlive
+            namespace: helloworld-prod
+      - notContains:
+          path: spec.destinations
+          content:
+            server: arn:aws:eks:eu-west-2:111111111111:cluster/container-platform-octo-nonlive
+            namespace: "*"
+
+  - it: renders the live AppProject with exactly the declared live namespace
+    values:
+      - ../tests/fixtures/helloworld.yaml
+    set:
+      productDir: helloworld
+      bu: octo
+      environment: live
+      targetCluster: container-platform-octo-live
+      server: arn:aws:eks:eu-west-2:111111111111:cluster/container-platform-octo-live
+      sourceRepo: https://example/repo
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: octo-helloworld-live
+      - lengthEqual:
+          path: spec.destinations
+          count: 1
+      - contains:
+          path: spec.destinations
+          content:
+            server: arn:aws:eks:eu-west-2:111111111111:cluster/container-platform-octo-live
+            namespace: helloworld-prod
+
+  - it: handles an off-pattern single-namespace product
+    values:
+      - ../tests/fixtures/davidb-sandbox.yaml
+    set:
+      productDir: davidb-sandbox
+      bu: octo
+      environment: nonlive
+      targetCluster: container-platform-octo-nonlive
+      server: arn:aws:eks:eu-west-2:111111111111:cluster/container-platform-octo-nonlive
+      sourceRepo: https://example/repo
+    asserts:
+      - hasDocuments:
+          count: 1
+      - equal:
+          path: metadata.name
+          value: octo-davidb-sandbox-nonlive
+      - lengthEqual:
+          path: spec.destinations
+          count: 1
+      - contains:
+          path: spec.destinations
+          content:
+            server: arn:aws:eks:eu-west-2:111111111111:cluster/container-platform-octo-nonlive
+            namespace: davidb-nginx-demo-dev
+
+  - it: skips rendering entirely when no environment targets the tier
+    values:
+      - ../tests/fixtures/davidb-sandbox.yaml
+    set:
+      productDir: davidb-sandbox
+      bu: octo
+      environment: live
+      targetCluster: container-platform-octo-live
+      server: arn:aws:eks:eu-west-2:111111111111:cluster/container-platform-octo-live
+      sourceRepo: https://example/repo
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: names the project from productDir, not the product.yaml product key
+    values:
+      - ../tests/fixtures/helloworld.yaml
+    set:
+      productDir: renamed-dir
+      bu: octo
+      environment: nonlive
+      targetCluster: container-platform-octo-nonlive
+      server: arn:aws:eks:eu-west-2:111111111111:cluster/container-platform-octo-nonlive
+      sourceRepo: https://example/repo
+    asserts:
+      - equal:
+          path: metadata.name
+          value: octo-renamed-dir-nonlive
+      - equal:
+          path: metadata.labels["container-platform/product"]
+          value: helloworld
+
+  - it: inherits the guardrails from the per-BU project
+    values:
+      - ../tests/fixtures/helloworld.yaml
+    set:
+      productDir: helloworld
+      bu: octo
+      environment: nonlive
+      targetCluster: container-platform-octo-nonlive
+      server: arn:aws:eks:eu-west-2:111111111111:cluster/container-platform-octo-nonlive
+      sourceRepo: https://example/repo
+    asserts:
+      - contains:
+          path: spec.sourceNamespaces
+          content: argocd
+      - contains:
+          path: spec.sourceRepos
+          content: https://example/repo
+      - contains:
+          path: spec.sourceRepos
+          content: https://example/repo.git
+      - contains:
+          path: spec.clusterResourceBlacklist
+          content:
+            group: "*"
+            kind: Namespace
+      - contains:
+          path: spec.namespaceResourceWhitelist
+          content:
+            group: apps
+            kind: Deployment
+
+  - it: fails the render when productDir is unset
+    values:
+      - ../tests/fixtures/helloworld.yaml
+    set:
+      productDir: ""
+      bu: octo
+      environment: nonlive
+      targetCluster: container-platform-octo-nonlive
+      server: arn:aws:eks:eu-west-2:111111111111:cluster/container-platform-octo-nonlive
+      sourceRepo: https://example/repo
+    asserts:
+      - failedTemplate:
+          errorMessage: "appproject-per-product: `productDir` is required (scalar parameter from the generator). It is the product directory name and the single source of truth for the AppProject name — it must match the workload ApplicationSet's project reference."
