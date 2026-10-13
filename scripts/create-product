@@ -1,0 +1,140 @@
+#!/bin/bash
+set -euo pipefail
+
+usage() {
+    cat <<'EOF'
+Usage: ./scripts/create-product --bu BU --product PRODUCT --team TEAM
+    [--service SERVICE] [--environments dev,prod] [--slack '#channel']
+
+Generate a product declaration and, optionally, a starter service Helm chart.
+Product-only generation requires Bash and standard system utilities.
+--service also requires Ruby. Helm is not required.
+Names must be lowercase DNS labels. TEAM is a GitHub team slug.
+Slack defaults to #TEAM. --slack accepts a channel name with or without #.
+The default environment is dev. prod maps to live; all others map to nonlive.
+Existing product directories are never overwritten. No resources are deployed.
+EOF
+}
+
+fail() {
+    printf 'Error: %s\n' "$*" >&2
+    exit 1
+}
+
+validate_name() {
+    [[ "$2" =~ ^[a-z0-9]([a-z0-9-]*[a-z0-9])?$ && ${#2} -le 63 ]] ||
+        fail "$1 must be a lowercase DNS label of at most 63 characters: $2"
+}
+
+bu=''
+product=''
+team=''
+slack=''
+service=''
+environment_list='dev'
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --help|-h) usage; exit 0 ;;
+        --bu|--product|--team|--service|--environments|--slack)
+            [[ $# -ge 2 && -n "$2" && "$2" != --* ]] || fail "Missing value for $1"
+            case "$1" in
+                --bu) bu="$2" ;;
+                --product) product="$2" ;;
+                --team) team="$2" ;;
+                --slack) slack="$2" ;;
+                --service) service="$2" ;;
+                --environments) environment_list="$2" ;;
+            esac
+            shift 2
+            ;;
+        *) fail "Unknown argument: $1 (use --help)" ;;
+    esac
+done
+
+[[ -n "$bu" && -n "$product" && -n "$team" ]] || fail '--bu, --product and --team are required'
+validate_name BU "$bu"
+validate_name Product "$product"
+validate_name Team "$team"
+slack="${slack:-#$team}"
+slack_name="${slack#\#}"
+[[ "$slack_name" =~ ^[a-z0-9_-]+$ && ${#slack_name} -le 80 ]] ||
+    fail 'Slack channel must contain 1-80 lowercase letters, digits, hyphens or underscores, with an optional leading #'
+slack="#$slack_name"
+if [[ -n "$service" ]]; then
+    validate_name Service "$service"
+    [[ "$service" != resources ]] || fail 'Service name resources is reserved'
+    command -v ruby >/dev/null 2>&1 || fail 'Ruby is required with --service. Install Ruby and rerun this command.'
+fi
+[[ "$environment_list" =~ ^[a-z0-9,-]+$ && "$environment_list" != ,* && "$environment_list" != *, && "$environment_list" != *,,* ]] ||
+    fail 'Environments must be a comma-separated list without empty entries'
+IFS=',' read -r -a environments <<< "$environment_list"
+seen=','
+has_nonlive=false
+has_live=false
+for environment in "${environments[@]}"; do
+    validate_name Environment "$environment"
+    [[ "$seen" != *",$environment,"* ]] || fail "Duplicate environment: $environment"
+    seen="${seen}${environment},"
+    [[ ${#product} -le $((62 - ${#environment})) ]] || fail "Namespace exceeds 63 characters: $product-$environment"
+    if [[ "$environment" == prod ]]; then
+        has_live=true
+    else
+        has_nonlive=true
+    fi
+done
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+bu_dir="$repo_root/namespaces/$bu"
+product_dir="$bu_dir/$product"
+[[ -d "$bu_dir" ]] || fail "Unknown business unit directory: namespaces/$bu"
+[[ ! -e "$product_dir" && ! -L "$product_dir" ]] || fail "Product already exists: namespaces/$bu/$product"
+mkdir "$product_dir"
+complete=false
+cleanup() {
+    if [[ "$complete" == false ]]; then
+        rm -rf -- "$product_dir"
+    fi
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+printf 'product: "%s"\nbu: "%s"\nowner:\n  team: "%s"\n  slack: "%s"\n  source: https://github.com/ministryofjustice/container-platform-environments\n\nenvironments:\n' \
+    "$product" "$bu" "$team" "$slack" > "$product_dir/product.yaml"
+for environment in "${environments[@]}"; do
+    tier=nonlive
+    production=false
+    if [[ "$environment" == prod ]]; then
+        tier=live
+        production=true
+    fi
+    cat >> "$product_dir/product.yaml" <<EOF
+  - name: "$environment"
+    cluster: "container-platform-$bu-$tier"
+    namespace: "$product-$environment"
+    is_production: $production
+EOF
+done
+printf '\naccess:\n' >> "$product_dir/product.yaml"
+for tier in nonlive live; do
+    role=edit
+    if [[ "$tier" == nonlive ]]; then
+        [[ "$has_nonlive" == true ]] || continue
+    else
+        [[ "$has_live" == true ]] || continue
+        role=view
+    fi
+    cat >> "$product_dir/product.yaml" <<EOF
+  - group: "$team"
+    role: $role
+    clusters:
+      - "container-platform-$bu-$tier"
+EOF
+done
+
+if [[ -n "$service" ]]; then
+    ruby "$repo_root/scripts/add-service" --bu "$bu" --product "$product" --service "$service" >/dev/null
+fi
+complete=true
+printf 'Created namespaces/%s/%s\n' "$bu" "$product"
+printf 'Review ownership, access, and the starter image before merging. Nothing has been deployed.\n'
