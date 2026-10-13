@@ -1,0 +1,11 @@
+# Routing metadata (consumed by the workload ApplicationSet)
+# DELIBERATELY MISROUTED for cloud-platform#8603: scopetest-evil is NOT declared
+# in product.yaml. Under Option A the per-product AppProject
+# (ephemeral-scopetest-nonlive) lists only scopetest-dev as a destination, so this
+# workload Application MUST be rejected by ArgoCD with a destination-not-permitted
+# error. Before Option A (namespace="*") it would have deployed. Revert after test.
+namespace: scopetest-evil
+# Helm value overrides
+replicaCount: 1
+image:
+  tag: latest

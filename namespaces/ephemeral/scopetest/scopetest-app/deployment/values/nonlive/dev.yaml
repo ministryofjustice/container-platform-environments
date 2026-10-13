@@ -1,0 +1,8 @@
+# Routing metadata (consumed by the workload ApplicationSet)
+# CORRECTLY routed: scopetest-dev IS declared in product.yaml, so the per-product
+# AppProject (ephemeral-scopetest-nonlive) permits this destination.
+namespace: scopetest-dev
+# Helm value overrides for dev
+replicaCount: 1
+image:
+  tag: latest
