@@ -1,4 +1,4 @@
-product: "integration-hub-file-transfer"
+product: "integration-hub-file-transfer-api"
 bu: "octo"
 owner:
   team: "integration-hub"
@@ -8,11 +8,11 @@ owner:
 environments:
   - name: "dev"
     cluster: "container-platform-octo-nonlive"
-    namespace: "integration-hub-file-transfer-development"
+    namespace: "integration-hub-file-transfer-api-development"
     is_production: false
   - name: "prod"
     cluster: "container-platform-octo-live"
-    namespace: "integration-hub-file-transfer-production"
+    namespace: "integration-hub-file-transfer-api-production"
     is_production: true
 
 access:
