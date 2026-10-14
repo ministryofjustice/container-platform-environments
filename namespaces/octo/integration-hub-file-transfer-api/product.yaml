@@ -1,0 +1,26 @@
+product: "integration-hub-file-transfer-api"
+bu: "octo"
+owner:
+  team: "integration-hub"
+  slack: "#integration-hub-team"
+  source: https://github.com/ministryofjustice/container-platform-environments
+
+environments:
+  - name: "dev"
+    cluster: "container-platform-octo-nonlive"
+    namespace: "integration-hub-file-transfer-api-development"
+    is_production: false
+  - name: "prod"
+    cluster: "container-platform-octo-live"
+    namespace: "integration-hub-file-transfer-api-production"
+    is_production: true
+
+access:
+  - group: "integration-hub"
+    role: edit
+    clusters:
+      - "container-platform-octo-nonlive"
+  - group: "integration-hub"
+    role: view
+    clusters:
+      - "container-platform-octo-live"

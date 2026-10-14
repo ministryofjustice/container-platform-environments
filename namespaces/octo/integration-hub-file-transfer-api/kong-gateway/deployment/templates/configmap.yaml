@@ -1,0 +1,9 @@
+{{- if .Values.kong }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Chart.Name }}-config
+data:
+  kong.yml: |
+{{ .Values.kong.declarativeConfig | indent 4 }}
+{{- end }}
