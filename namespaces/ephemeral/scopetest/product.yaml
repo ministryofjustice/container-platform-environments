@@ -1,0 +1,27 @@
+product: scopetest
+bu: ephemeral
+owner:
+  team: cloud-platform
+  slack: "#cloud-platform"
+  source: https://github.com/ministryofjustice/container-platform-environments
+
+# THROWAWAY test fixture for cloud-platform#8603 (per-product namespace scoping).
+# Deployed to an ephemeral hub/spoke pair to verify Option A: the generated
+# per-product AppProject destinations are scoped to exactly the namespace(s)
+# declared below (scopetest-dev), never "*". Revert after the test.
+#
+# Declares a SINGLE namespace on purpose: the second workload values file
+# (deployment/values/nonlive/evil.yaml) routes to an UNDECLARED namespace
+# (scopetest-evil) and must be rejected by the per-product AppProject.
+environments:
+  - name: dev
+    cluster: cp-1310-1459-spoke
+    namespace: scopetest-dev
+    is_production: false
+
+# No access block on purpose. The access[] entries drive permanent-cluster SSO
+# EKS access-entry wiring (identity/terraform), which indexes a fixed map of
+# real account IDs by cluster name — an ephemeral spoke is not in that map, so
+# listing it there fails the identity plan. The scoping test needs only the
+# namespace + workload Applications, not team RoleBindings, so access is omitted.
+access: []
