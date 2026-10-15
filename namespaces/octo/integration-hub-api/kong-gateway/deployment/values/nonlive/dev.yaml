@@ -11,7 +11,15 @@ service:
   targetPort: 8000
 
 containerSecurityContext:
-  runAsUser: 1000
+  runAsUser: 1001
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
 
 kong:
   declarativeConfig: |
