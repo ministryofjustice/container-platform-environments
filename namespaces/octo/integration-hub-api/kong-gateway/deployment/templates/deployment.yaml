@@ -37,11 +37,27 @@ spec:
               value: kong
             - name: KONG_PROXY_LISTEN
               value: "0.0.0.0:8000"
+            - name: KONG_STATUS_LISTEN
+              value: "0.0.0.0:8100"
+            - name: KONG_NGINX_WORKER_PROCESSES
+              value: {{ .workerProcesses | default 1 | quote }}
           {{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.service.targetPort }}
           {{- if .Values.kong }}
+          readinessProbe:
+            httpGet:
+              path: /status/ready
+              port: 8100
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /status
+              port: 8100
+            initialDelaySeconds: 15
+            periodSeconds: 20
           volumeMounts:
             - name: kong-declarative-config
               mountPath: /kong/declarative
