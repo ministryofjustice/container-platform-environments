@@ -10,6 +10,10 @@ environments:
     cluster: container-platform-octo-nonlive
     namespace: davidb-nginx-demo-dev
     is_production: false
+  - name: staging
+    cluster: container-platform-octo-nonlive
+    namespace: davidb-nginx-demo-staging
+    is_production: false
 
 access:
   # Non-live: edit access for development workflows
