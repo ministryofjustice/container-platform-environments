@@ -47,6 +47,21 @@ kong:
           - name: api-fail-route
             paths:
               - /fail
+      - name: ping
+        url: http://localhost:8000
+        routes:
+          - name: ping-route
+            paths:
+              - /ping
+            plugins:
+              - name: request-termination
+                config:
+                  status_code: 200
+                  message: ok
+              - name: rate-limiting
+                config:
+                  minute: 1000000
+                  policy: local
       - name: api-b
         url: http://httpbin.org/anything
         plugins:
