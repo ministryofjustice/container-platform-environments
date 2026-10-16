@@ -3,8 +3,8 @@ replicaCount: 1
 
 image:
   repository: nginxinc/nginx-unprivileged
-  tag: "1.27.4"
-  digest: "sha256:663d1f83b634d625f3c36b323b21cc5c2c4ed5ebf912a01bfe13cce2f455e92e"
+  tag: "1.27.5"
+  digest: "sha256:f9dfa9c20b2b0b7c5cc830374f22f23dee3f750b6c5291ca7e0330b5c88e6403"
 
 resources:
   requests:
