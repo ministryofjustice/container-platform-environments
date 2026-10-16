@@ -2,6 +2,8 @@
 namespace: integration-hub-api-development
 host: kong-gateway-dev.octo-nonlive.container-platform.service.justice.gov.uk
 
+replicaCount: 2
+
 image:
   repository: kong
   tag: "3.9.3"
@@ -25,10 +27,64 @@ kong:
   declarativeConfig: |
     _format_version: "3.0"
     services:
-      - name: httpbin
-        url: http://httpbin.org
+      - name: api-a
+        url: http://httpbin.org/anything
+        plugins:
+          - name: key-auth
+          - name: acl
+            config:
+              allow:
+                - dashboard
         routes:
-          - name: echo
+          - name: api-a-route
             paths:
-              - /anything
-            strip_path: false
+              - /a
+      - name: api-fail
+        url: http://httpbin.org/status/503
+        plugins:
+          - name: key-auth
+        routes:
+          - name: api-fail-route
+            paths:
+              - /fail
+      - name: api-b
+        url: http://httpbin.org/anything
+        plugins:
+          - name: jwt
+            config:
+              claims_to_verify:
+                - exp
+        routes:
+          - name: api-b-route
+            paths:
+              - /b
+    plugins:
+      - name: rate-limiting
+        config:
+          minute: 5
+          limit_by: consumer
+          policy: local
+      - name: file-log
+        config:
+          path: /dev/stdout
+      - name: prometheus
+        config:
+          per_consumer: true
+          status_code_metrics: true
+          latency_metrics: true
+          bandwidth_metrics: true
+    consumers:
+      - username: case-dashboard
+        acls:
+          - group: dashboard
+        keyauth_credentials:
+          - key: dashboard-test-key-123
+        jwt_secrets:
+          - key: case-dashboard-issuer
+            algorithm: HS256
+            secret: local-trial-only-jwt-secret-0123456789
+      - username: reporting
+        acls:
+          - group: reporting
+        keyauth_credentials:
+          - key: reporting-test-key-456
