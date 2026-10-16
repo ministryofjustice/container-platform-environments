@@ -9,8 +9,16 @@ environments:
     cluster: container-platform-hmpps-nonlive
     namespace: hmpps-test-dev
     is_production: false
+  - name: prod
+    cluster: container-platform-hmpps-live
+    namespace: hmpps-test-prod
+    is_production: true
 access:
   - group: hmpps-sre
     role: edit
     clusters:
       - container-platform-hmpps-nonlive
+  - group: hmpps-sre-nondevs
+    role: edit
+    clusters:
+      - container-platform-hmpps-live

@@ -12,8 +12,3 @@ generic-service:
 
   scheduledDowntime:
     enabled: false
-
-  allowlist:
-    groups:
-      - digital_staff_and_mojo
-      - moj_cloud_platform
