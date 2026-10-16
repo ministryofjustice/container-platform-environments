@@ -1,3 +1,8 @@
 namespace: davidb-nginx-demo-staging
 replicaCount: 1
 host: davidb-nginx-demo-staging.octo-nonlive.container-platform.service.justice.gov.uk
+
+image:
+  repository: nginxinc/nginx-unprivileged
+  tag: "1.27.5"
+  digest: "sha256:f9dfa9c20b2b0b7c5cc830374f22f23dee3f750b6c5291ca7e0330b5c88e6403"
