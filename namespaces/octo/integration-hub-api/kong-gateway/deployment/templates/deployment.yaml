@@ -14,6 +14,7 @@ spec:
       labels:
         app: {{ .Chart.Name | quote }}
     spec:
+      terminationGracePeriodSeconds: 45
       securityContext:
         runAsNonRoot: true
         seccompProfile:
@@ -58,6 +59,10 @@ spec:
               port: 8100
             initialDelaySeconds: 15
             periodSeconds: 20
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "{{ .Values.kong.shutdownDelaySeconds | default 10 }}"]
           volumeMounts:
             - name: kong-declarative-config
               mountPath: /kong/declarative
