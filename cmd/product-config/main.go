@@ -3,10 +3,10 @@ package main
 import (
 	"bufio"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -21,11 +21,10 @@ type productManifest struct {
 }
 
 type environment struct {
-	Name              string `yaml:"name"`
-	Cluster           string `yaml:"cluster"`
-	Namespace         string `yaml:"namespace"`
-	IsProduction      *bool  `yaml:"is_production"`
-	AllowPRDeployment bool   `yaml:"allow_pr_deployment"`
+	Name         string `yaml:"name"`
+	Cluster      string `yaml:"cluster"`
+	Namespace    string `yaml:"namespace"`
+	IsProduction bool   `yaml:"is_production"`
 }
 
 type matrixOutput struct {
@@ -33,13 +32,12 @@ type matrixOutput struct {
 }
 
 type matrixTarget struct {
-	Product           string `json:"product"`
-	BU                string `json:"bu"`
-	Environment       string `json:"environment"`
-	Cluster           string `json:"cluster"`
-	Namespace         string `json:"namespace"`
-	IsProduction      bool   `json:"is_production"`
-	AllowPRDeployment bool   `json:"allow_pr_deployment"`
+	Product      string `json:"product"`
+	BU           string `json:"bu"`
+	Environment  string `json:"environment"`
+	Cluster      string `json:"cluster"`
+	Namespace    string `json:"namespace"`
+	IsProduction bool   `json:"is_production"`
 }
 
 func main() {
@@ -47,70 +45,78 @@ func main() {
 }
 
 func run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
-	if len(args) != 2 || (args[0] != "validate" && args[0] != "matrix") {
-		if len(args) == 2 && args[0] == "matrix-changes" {
-			output, err := matrixForChangedPaths(args[1], stdin)
-			if err != nil {
-				fmt.Fprintln(stderr, err)
-				return 1
-			}
-			return writeMatrix(output, stdout, stderr)
-		}
-		fmt.Fprintln(stderr, "usage: product-config <validate|matrix> <product.yaml> | matrix-changes <repo-root> (changed paths on stdin)")
+	if len(args) != 1 {
+		fmt.Fprintln(stderr, "usage: product-config <repo-root> (changed paths on stdin)")
 		return 2
 	}
 
-	manifest, err := loadProduct(args[1])
-	if err == nil {
-		err = validateProduct(manifest)
-	}
+	output, err := matrixForChangedPaths(args[0], stdin)
 	if err != nil {
 		fmt.Fprintln(stderr, err)
 		return 1
 	}
-
-	switch args[0] {
-	case "validate":
-		fmt.Fprintf(stdout, "valid product %s: %d environment(s)\n", manifest.Product, len(manifest.Environments))
-	case "matrix":
-		return writeMatrix(matrixForProduct(manifest), stdout, stderr)
-	}
-
-	return 0
+	return writeMatrix(output, stdout, stderr)
 }
 
 func matrixForChangedPaths(root string, changedPaths io.Reader) (matrixOutput, error) {
+	productDirs, err := productDirectoriesFromChangedPaths(changedPaths)
+	if err != nil {
+		return matrixOutput{}, err
+	}
+	return matrixForProductDirectories(root, productDirs)
+}
+
+// productDirectoriesFromChangedPaths maps changed product manifests and resource files
+// to their product directories, keeping one directory per product.
+func productDirectoriesFromChangedPaths(changedPaths io.Reader) ([]string, error) {
 	productDirs := make(map[string]struct{})
 	scanner := bufio.NewScanner(changedPaths)
 	for scanner.Scan() {
-		parts := strings.Split(filepath.ToSlash(filepath.Clean(scanner.Text())), "/")
-		isProductManifest := len(parts) == 4 && parts[3] == "product.yaml"
-		isResourceFile := len(parts) >= 5 && parts[3] == "resources"
-		if len(parts) >= 4 && parts[0] == "namespaces" && (isProductManifest || isResourceFile) {
-			productDirs[filepath.Join(root, parts[0], parts[1], parts[2], "product.yaml")] = struct{}{}
+		if productDir, ok := productDirectoryForChangedPath(scanner.Text()); ok {
+			productDirs[productDir] = struct{}{}
 		}
 	}
 	if err := scanner.Err(); err != nil {
-		return matrixOutput{}, fmt.Errorf("read changed paths: %w", err)
-	}
-	if len(productDirs) == 0 {
-		return matrixOutput{}, errors.New("no changed resource files found under namespaces/<bu>/<product>/resources/")
+		return nil, fmt.Errorf("read changed paths: %w", err)
 	}
 
-	manifestPaths := make([]string, 0, len(productDirs))
-	for path := range productDirs {
-		manifestPaths = append(manifestPaths, path)
+	directories := make([]string, 0, len(productDirs))
+	for dir := range productDirs {
+		directories = append(directories, dir)
 	}
-	sort.Strings(manifestPaths)
+	sort.Strings(directories)
+	return directories, nil
+}
 
+func productDirectoryForChangedPath(changedPath string) (string, bool) {
+	cleanPath := path.Clean(filepath.ToSlash(changedPath))
+	_, ok := strings.CutPrefix(cleanPath, "namespaces/")
+	if !ok {
+		return "", false
+	}
+
+	if strings.HasSuffix(cleanPath, "/product.yaml") {
+		productDir := path.Dir(cleanPath)
+		if path.Dir(path.Dir(productDir)) == "namespaces" {
+			return productDir, true
+		}
+	}
+
+	productDir, resourceFile, isResourceFile := strings.Cut(cleanPath, "/resources/")
+	if isResourceFile && resourceFile != "" && path.Dir(path.Dir(productDir)) == "namespaces" {
+		return productDir, true
+	}
+	return "", false
+}
+
+// matrixForProductDirectories loads each product manifest and adds one matrix row per environment.
+func matrixForProductDirectories(root string, productDirs []string) (matrixOutput, error) {
 	output := matrixOutput{Include: []matrixTarget{}}
-	for _, path := range manifestPaths {
-		manifest, err := loadProduct(path)
+	for _, dir := range productDirs {
+		manifestPath := filepath.Join(root, dir, "product.yaml")
+		manifest, err := loadProduct(manifestPath)
 		if err != nil {
 			return matrixOutput{}, err
-		}
-		if err := validateProduct(manifest); err != nil {
-			return matrixOutput{}, fmt.Errorf("%s: %w", path, err)
 		}
 		output.Include = append(output.Include, matrixForProduct(manifest).Include...)
 	}
@@ -121,13 +127,12 @@ func matrixForProduct(manifest productManifest) matrixOutput {
 	output := matrixOutput{Include: make([]matrixTarget, 0, len(manifest.Environments))}
 	for _, environment := range manifest.Environments {
 		output.Include = append(output.Include, matrixTarget{
-			Product:           manifest.Product,
-			BU:                manifest.BU,
-			Environment:       environment.Name,
-			Cluster:           environment.Cluster,
-			Namespace:         environment.Namespace,
-			IsProduction:      *environment.IsProduction,
-			AllowPRDeployment: environment.AllowPRDeployment,
+			Product:      manifest.Product,
+			BU:           manifest.BU,
+			Environment:  environment.Name,
+			Cluster:      environment.Cluster,
+			Namespace:    environment.Namespace,
+			IsProduction: environment.IsProduction,
 		})
 	}
 	return output
@@ -152,48 +157,4 @@ func loadProduct(path string) (productManifest, error) {
 		return productManifest{}, fmt.Errorf("parse %s: %w", path, err)
 	}
 	return manifest, nil
-}
-
-func validateProduct(manifest productManifest) error {
-	if strings.TrimSpace(manifest.Product) == "" {
-		return errors.New("product must be a non-empty string")
-	}
-	if strings.TrimSpace(manifest.BU) == "" {
-		return errors.New("bu must be a non-empty string")
-	}
-	if len(manifest.Environments) == 0 {
-		return errors.New("environments must contain at least one entry")
-	}
-
-	names := make(map[string]struct{}, len(manifest.Environments))
-	targets := make(map[string]struct{}, len(manifest.Environments))
-	for index, environment := range manifest.Environments {
-		prefix := fmt.Sprintf("environments[%d]", index)
-		if strings.TrimSpace(environment.Name) == "" {
-			return fmt.Errorf("%s.name must be a non-empty string", prefix)
-		}
-		if strings.TrimSpace(environment.Cluster) == "" {
-			return fmt.Errorf("%s.cluster must be a non-empty string", prefix)
-		}
-		if strings.TrimSpace(environment.Namespace) == "" {
-			return fmt.Errorf("%s.namespace must be a non-empty string", prefix)
-		}
-		if environment.IsProduction == nil {
-			return fmt.Errorf("%s.is_production must be true or false", prefix)
-		}
-
-		nameKey := strings.ToLower(environment.Name)
-		if _, exists := names[nameKey]; exists {
-			return fmt.Errorf("duplicate environment name %q", environment.Name)
-		}
-		names[nameKey] = struct{}{}
-
-		targetKey := environment.Cluster + "/" + environment.Namespace
-		if _, exists := targets[targetKey]; exists {
-			return fmt.Errorf("duplicate namespace target %q", targetKey)
-		}
-		targets[targetKey] = struct{}{}
-	}
-
-	return nil
 }
