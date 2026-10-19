@@ -1,0 +1,20 @@
+name: User Terraform Apply
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'namespaces/**/product.yaml'
+      - 'namespaces/**/resources/**'
+
+permissions:
+  contents: read
+
+jobs:
+  apply:
+    uses: ./.github/workflows/user-terraform-run.yml
+    with:
+      apply: true
+      base-sha: ${{ github.event.before }}
+      head-sha: ${{ github.sha }}
