@@ -1,0 +1,106 @@
+name: User Terraform
+
+on:
+  workflow_call:
+    inputs:
+      apply:
+        description: 'Apply after plan'
+        type: boolean
+        default: false
+      base-sha:
+        description: 'PR base SHA or push before SHA'
+        required: true
+        type: string
+      head-sha:
+        description: 'PR head SHA or push after SHA'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.environments.outputs.matrix }}
+      has-targets: ${{ steps.environments.outputs.has-targets }}
+    steps:
+      - name: Validate apply context
+        if: inputs.apply
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF: ${{ github.ref }}
+          HEAD_SHA: ${{ inputs.head-sha }}
+          RUN_SHA: ${{ github.sha }}
+        run: |
+          if [[ "$EVENT_NAME" != push || "$REF" != refs/heads/main || "$HEAD_SHA" != "$RUN_SHA" ]]; then
+            echo "::error::Apply requires a push to main at the pushed commit"
+            exit 1
+          fi
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: cmd/product-config/go.mod
+          cache-dependency-path: cmd/product-config/go.sum
+
+      - name: Define environments
+        id: environments
+        env:
+          BASE_SHA: ${{ inputs.base-sha }}
+          HEAD_SHA: ${{ inputs.head-sha }}
+          EVENT_NAME: ${{ github.event_name }}
+        working-directory: cmd/product-config
+        run: |
+          if [[ "$EVENT_NAME" == pull_request ]]; then
+            BASE_SHA="$(git merge-base "$BASE_SHA" "$HEAD_SHA")"
+          fi
+
+          changed_paths="$(git diff --name-only "$BASE_SHA" "$HEAD_SHA")"
+          matrix="$(printf '%s\n' "$changed_paths" | go run . ../..)"
+
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+          echo "has-targets=$(jq -r '.include | length > 0' <<< "$matrix")" >> "$GITHUB_OUTPUT"
+          echo "$matrix"
+
+  terraform:
+    needs: discover
+    if: needs.discover.outputs.has-targets == 'true'
+    name: ${{ inputs.apply && 'apply' || 'plan' }} / ${{ matrix.bu }} / ${{ matrix.product }} / ${{ matrix.environment }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.discover.outputs.matrix) }}
+    concurrency:
+      # Share the state lock across PR plans and main applies.
+      group: user-terraform-state-${{ matrix.bu }}/${{ matrix.product }}/${{ matrix.environment }}
+      cancel-in-progress: false
+      queue: max
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Resolve target account
+        env:
+          PRODUCT: ${{ matrix.product }}
+          BU: ${{ matrix.bu }}
+          ENVIRONMENT: ${{ matrix.environment }}
+          CLUSTER: ${{ matrix.cluster }}
+          NAMESPACE: ${{ matrix.namespace }}
+          IS_PRODUCTION: ${{ matrix.is_production }}
+          STATE_KEY: products/${{ matrix.bu }}/${{ matrix.product }}/resources.tfstate
+        run: |
+          echo "Target account: $CLUSTER"
+          echo "Product: $PRODUCT ($BU)"
+          echo "Environment: $ENVIRONMENT"
+          echo "Namespace: $NAMESPACE"
+          echo "Production: $IS_PRODUCTION"
+          echo "Backend key: $STATE_KEY"

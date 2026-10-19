@@ -7,80 +7,22 @@ on:
     paths:
       - 'namespaces/**/product.yaml'
       - 'namespaces/**/resources/**'
+  pull_request:
+    paths:
+      - 'namespaces/**/product.yaml'
+      - 'namespaces/**/resources/**'
+
 permissions:
   contents: read
 
+concurrency:
+  group: user-terraform-plan-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
-  discover:
-    runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.environments.outputs.matrix }}
-    steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-        with:
-          fetch-depth: 0
-
-      - uses: actions/setup-go@v6
-        with:
-          go-version-file: cmd/product-config/go.mod
-          cache-dependency-path: cmd/product-config/go.sum
-
-      - name: Define environments
-        id: environments
-        env:
-          BEFORE_SHA: ${{ github.event.before }}
-          HEAD_SHA: ${{ github.sha }}
-        working-directory: cmd/product-config
-        run: |
-          changed_paths="$(git diff --name-only "$BEFORE_SHA" "$HEAD_SHA")"
-          matrix="$(printf '%s\n' "$changed_paths" | go run . ../..)"
-
-          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
-          echo "$matrix"
-
   plan:
-    needs: discover
-    name: ${{ matrix.bu }} / ${{ matrix.product }} / ${{ matrix.environment }}
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      max-parallel: 1
-      matrix: ${{ fromJSON(needs.discover.outputs.matrix) }}
-    steps:
-      - name: Resolve target account (simulation only)
-        env:
-          PRODUCT: ${{ matrix.product }}
-          BU: ${{ matrix.bu }}
-          ENVIRONMENT: ${{ matrix.environment }}
-          CLUSTER: ${{ matrix.cluster }}
-          NAMESPACE: ${{ matrix.namespace }}
-          IS_PRODUCTION: ${{ matrix.is_production }}
-          STATE_KEY: products/${{ matrix.bu }}/${{ matrix.product }}/resources.tfstate
-        run: |
-          echo "Would target account: $CLUSTER"
-          echo "Product: $PRODUCT ($BU)"
-          echo "Environment: $ENVIRONMENT"
-          echo "Namespace: $NAMESPACE"
-          echo "Production: $IS_PRODUCTION"
-          echo "Backend key: $STATE_KEY"
-
-      - name: Authenticate to AWS (simulation only)
-        env:
-          TARGET_ACCOUNT: ${{ matrix.cluster }}
-        run: echo "Would exchange GitHub OIDC for the allow-listed plan role in $TARGET_ACCOUNT"
-
-      - name: Initialize Terraform backend (simulation only)
-        env:
-          STATE_KEY: products/${{ matrix.bu }}/${{ matrix.product }}/resources.tfstate
-        run: echo "Would run terraform init with the platform state bucket and key $STATE_KEY"
-
-      - name: Select or create workspace (simulation only)
-        env:
-          ENVIRONMENT: ${{ matrix.environment }}
-        run: echo "Would run terraform workspace select $ENVIRONMENT || terraform workspace new $ENVIRONMENT"
-
-      - name: Plan resources (simulation only)
-        env:
-          PRODUCT: ${{ matrix.product }}
-          ENVIRONMENT: ${{ matrix.environment }}
-        run: echo "Would run terraform plan for $PRODUCT in workspace $ENVIRONMENT"
+    uses: ./.github/workflows/user-terraform-run.yml
+    with:
+      apply: false
+      base-sha: ${{ github.event.pull_request.base.sha || github.event.before }}
+      head-sha: ${{ github.event.pull_request.head.sha || github.sha }}
