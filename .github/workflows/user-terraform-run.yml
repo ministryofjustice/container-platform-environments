@@ -72,7 +72,7 @@ jobs:
   terraform:
     needs: discover
     if: needs.discover.outputs.has-targets == 'true'
-    name: ${{ inputs.apply && 'apply' || 'plan' }} / ${{ matrix.bu }} / ${{ matrix.product }} / ${{ matrix.environment }}
+    name: ${{ matrix.bu }} - ${{ matrix.product }} (${{ matrix.environment }}) - ${{ inputs.apply && 'apply' || 'plan' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
