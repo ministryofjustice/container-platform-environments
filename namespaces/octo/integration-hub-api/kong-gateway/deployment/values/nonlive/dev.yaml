@@ -4,6 +4,15 @@ host: kong-gateway-dev.octo-nonlive.container-platform.service.justice.gov.uk
 
 replicaCount: 2
 
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 4
+  targetCPUUtilizationPercentage: 70
+
+benchmarkBackend:
+  enabled: true
+
 image:
   repository: kong
   tag: "3.9.3"
@@ -35,6 +44,11 @@ kong:
             config:
               allow:
                 - dashboard
+          - name: rate-limiting
+            config:
+              minute: 5
+              limit_by: consumer
+              policy: local
         routes:
           - name: api-a-route
             paths:
@@ -43,10 +57,35 @@ kong:
         url: http://httpbin.org/status/503
         plugins:
           - name: key-auth
+          - name: rate-limiting
+            config:
+              minute: 5
+              limit_by: consumer
+              policy: local
         routes:
           - name: api-fail-route
             paths:
               - /fail
+      - name: benchmark
+        url: http://kong-gateway-benchmark-backend:8080
+        routes:
+          - name: benchmark-route
+            hosts:
+              - kong-benchmark.internal
+            paths:
+              - /benchmark
+      - name: anonymous-rate-limit
+        url: http://kong-gateway-benchmark-backend:8080
+        routes:
+          - name: anonymous-rate-limit-route
+            paths:
+              - /anonymous-rate-limit
+            plugins:
+              - name: rate-limiting
+                config:
+                  minute: 5
+                  limit_by: ip
+                  policy: local
       - name: ping
         url: http://localhost:8000
         routes:
@@ -69,16 +108,146 @@ kong:
             config:
               claims_to_verify:
                 - exp
+          - name: rate-limiting
+            config:
+              minute: 5
+              limit_by: consumer
+              policy: local
         routes:
           - name: api-b-route
             paths:
               - /b
+      - name: scale-test-api-01
+        url: http://kong-gateway-benchmark-backend:8080
+        plugins:
+          - name: key-auth
+          - name: rate-limiting
+            config:
+              minute: 5
+              limit_by: consumer
+              policy: local
+        routes:
+          - name: scale-test-api-01-route
+            paths:
+              - /scale-test/api-01
+      - name: scale-test-api-02
+        url: http://kong-gateway-benchmark-backend:8080
+        plugins:
+          - name: key-auth
+          - name: rate-limiting
+            config:
+              minute: 5
+              limit_by: consumer
+              policy: local
+        routes:
+          - name: scale-test-api-02-route
+            paths:
+              - /scale-test/api-02
+      - name: scale-test-api-03
+        url: http://kong-gateway-benchmark-backend:8080
+        plugins:
+          - name: key-auth
+          - name: rate-limiting
+            config:
+              minute: 5
+              limit_by: consumer
+              policy: local
+        routes:
+          - name: scale-test-api-03-route
+            paths:
+              - /scale-test/api-03
+      - name: scale-test-api-04
+        url: http://kong-gateway-benchmark-backend:8080
+        plugins:
+          - name: key-auth
+          - name: rate-limiting
+            config:
+              minute: 5
+              limit_by: consumer
+              policy: local
+        routes:
+          - name: scale-test-api-04-route
+            paths:
+              - /scale-test/api-04
+      - name: scale-test-api-05
+        url: http://kong-gateway-benchmark-backend:8080
+        plugins:
+          - name: key-auth
+          - name: rate-limiting
+            config:
+              minute: 5
+              limit_by: consumer
+              policy: local
+        routes:
+          - name: scale-test-api-05-route
+            paths:
+              - /scale-test/api-05
+      - name: scale-test-api-06
+        url: http://kong-gateway-benchmark-backend:8080
+        plugins:
+          - name: key-auth
+          - name: rate-limiting
+            config:
+              minute: 5
+              limit_by: consumer
+              policy: local
+        routes:
+          - name: scale-test-api-06-route
+            paths:
+              - /scale-test/api-06
+      - name: scale-test-api-07
+        url: http://kong-gateway-benchmark-backend:8080
+        plugins:
+          - name: key-auth
+          - name: rate-limiting
+            config:
+              minute: 5
+              limit_by: consumer
+              policy: local
+        routes:
+          - name: scale-test-api-07-route
+            paths:
+              - /scale-test/api-07
+      - name: scale-test-api-08
+        url: http://kong-gateway-benchmark-backend:8080
+        plugins:
+          - name: key-auth
+          - name: rate-limiting
+            config:
+              minute: 5
+              limit_by: consumer
+              policy: local
+        routes:
+          - name: scale-test-api-08-route
+            paths:
+              - /scale-test/api-08
+      - name: scale-test-api-09
+        url: http://kong-gateway-benchmark-backend:8080
+        plugins:
+          - name: key-auth
+          - name: rate-limiting
+            config:
+              minute: 5
+              limit_by: consumer
+              policy: local
+        routes:
+          - name: scale-test-api-09-route
+            paths:
+              - /scale-test/api-09
+      - name: scale-test-api-10
+        url: http://kong-gateway-benchmark-backend:8080
+        plugins:
+          - name: key-auth
+          - name: rate-limiting
+            config:
+              minute: 5
+              limit_by: consumer
+              policy: local
+        routes:
+          - name: scale-test-api-10-route
+            paths:
+              - /scale-test/api-10
     plugins:
-      - name: rate-limiting
-        config:
-          minute: 5
-          limit_by: consumer
-          policy: local
       - name: file-log
         config:
           path: /dev/stdout
@@ -103,3 +272,13 @@ kong:
           - group: reporting
         keyauth_credentials:
           - key: reporting-test-key-456
+      - username: scale-test-consumer-01
+      - username: scale-test-consumer-02
+      - username: scale-test-consumer-03
+      - username: scale-test-consumer-04
+      - username: scale-test-consumer-05
+      - username: scale-test-consumer-06
+      - username: scale-test-consumer-07
+      - username: scale-test-consumer-08
+      - username: scale-test-consumer-09
+      - username: scale-test-consumer-10

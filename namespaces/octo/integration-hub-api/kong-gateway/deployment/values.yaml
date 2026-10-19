@@ -1,5 +1,11 @@
 replicaCount: 1
 
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 4
+  targetCPUUtilizationPercentage: 70
+
 image:
   repository: nginxinc/nginx-unprivileged
   tag: stable-alpine
@@ -7,6 +13,7 @@ image:
 service:
   port: 80
   targetPort: 8080
+  metricsPort: 8100
 
 resources:
   requests:
@@ -17,3 +24,16 @@ resources:
     memory: 128Mi
 
 containerSecurityContext: {}
+
+benchmarkBackend:
+  enabled: false
+  image:
+    repository: nginxinc/nginx-unprivileged
+    tag: stable-alpine
+  resources:
+    requests:
+      cpu: 25m
+      memory: 64Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi

@@ -8,6 +8,13 @@ spec:
   selector:
     app: {{ .Chart.Name | quote }}
   ports:
-    - port: {{ .Values.service.port }}
+    - name: http
+      port: {{ .Values.service.port }}
       targetPort: {{ .Values.service.targetPort }}
       protocol: TCP
+    {{- if .Values.kong }}
+    - name: metrics
+      port: {{ .Values.service.metricsPort }}
+      targetPort: {{ .Values.service.metricsPort }}
+      protocol: TCP
+    {{- end }}

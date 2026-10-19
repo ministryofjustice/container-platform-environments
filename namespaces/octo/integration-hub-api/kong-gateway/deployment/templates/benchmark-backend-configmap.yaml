@@ -1,0 +1,19 @@
+{{- if .Values.benchmarkBackend.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Chart.Name }}-benchmark-backend
+  labels:
+    app: {{ .Chart.Name }}-benchmark-backend
+data:
+  default.conf: |
+    server {
+      listen 8080;
+      server_name _;
+
+      location / {
+        default_type text/plain;
+        return 200 "$request_method $request_uri\n";
+      }
+    }
+{{- end }}

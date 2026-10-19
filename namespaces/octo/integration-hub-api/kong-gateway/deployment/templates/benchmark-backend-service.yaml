@@ -1,0 +1,16 @@
+{{- if .Values.benchmarkBackend.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Chart.Name }}-benchmark-backend
+  labels:
+    app: {{ .Chart.Name }}-benchmark-backend
+spec:
+  selector:
+    app: {{ .Chart.Name }}-benchmark-backend
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      protocol: TCP
+{{- end }}
