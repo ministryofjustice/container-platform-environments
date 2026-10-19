@@ -1,0 +1,53 @@
+{{- if .Values.benchmarkBackend.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Chart.Name }}-benchmark-backend
+  labels:
+    app: {{ .Chart.Name }}-benchmark-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}-benchmark-backend
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}-benchmark-backend
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: benchmark-backend
+          image: {{ printf "%s:%s" .Values.benchmarkBackend.image.repository .Values.benchmarkBackend.image.tag | quote }}
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            {{- toYaml .Values.benchmarkBackend.resources | nindent 12 }}
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: default.conf
+              readOnly: true
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: {{ .Chart.Name }}-benchmark-backend
+{{- end }}

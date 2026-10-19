@@ -5,7 +5,9 @@ metadata:
   labels:
     app: {{ .Chart.Name | quote }}
 spec:
+  {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
+  {{- end }}
   selector:
     matchLabels:
       app: {{ .Chart.Name | quote }}

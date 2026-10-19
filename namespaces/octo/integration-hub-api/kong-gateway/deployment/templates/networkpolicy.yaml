@@ -18,3 +18,12 @@ spec:
       ports:
         - protocol: TCP
           port: {{ .Values.service.targetPort }}
+    {{- if .Values.kong }}
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              component: monitoring
+      ports:
+        - protocol: TCP
+          port: {{ .Values.service.metricsPort }}
+    {{- end }}
