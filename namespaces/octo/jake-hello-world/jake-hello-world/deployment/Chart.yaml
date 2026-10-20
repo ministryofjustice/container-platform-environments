@@ -1,6 +1,6 @@
 apiVersion: v2
-name: my-app
-description: my-app service
+name: jake-hello-world
+description: jake-hello-world service
 type: application
 version: 1.0.0
 appVersion: "1.0.0"

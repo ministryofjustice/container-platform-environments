@@ -1,13 +1,13 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: my-app-allow-gateway
+  name: jake-hello-world-allow-gateway
   labels:
-    app: my-app
+    app: jake-hello-world
 spec:
   podSelector:
     matchLabels:
-      app: my-app
+      app: jake-hello-world
   policyTypes:
     - Ingress
   ingress:

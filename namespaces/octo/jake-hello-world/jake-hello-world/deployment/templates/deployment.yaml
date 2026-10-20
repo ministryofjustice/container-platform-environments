@@ -1,25 +1,25 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: my-app
+  name: jake-hello-world
   labels:
-    app: my-app
+    app: jake-hello-world
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: my-app
+      app: jake-hello-world
   template:
     metadata:
       labels:
-        app: my-app
+        app: jake-hello-world
     spec:
       securityContext:
         runAsNonRoot: true
         seccompProfile:
           type: RuntimeDefault
       containers:
-        - name: myapp
+        - name: jake-hello-world
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}@{{ .Values.image.digest }}"
           ports:
             - containerPort: {{ .Values.service.targetPort }}
