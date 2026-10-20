@@ -1,0 +1,21 @@
+name: User Terraform Plan
+
+on:
+  pull_request:
+    paths:
+      - 'namespaces/**/product.yaml'
+      - 'namespaces/**/resources/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: user-terraform-plan-${{ github.event.pull_request.number || github.run_id }}
+
+jobs:
+  plan:
+    uses: ./.github/workflows/user-terraform-run.yml
+    with:
+      apply: false
+      base-sha: ${{ github.event.pull_request.base.sha || github.event.before }}
+      head-sha: ${{ github.event.pull_request.head.sha || github.sha }}
