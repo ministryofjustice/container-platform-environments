@@ -23,82 +23,82 @@ provider "aws" {
   }
 }
 
-# AWS provider (octo nonlive account): Used to manage EKS access entries through a cross-account role.
+# AWS provider (octo nonlive account): Used to manage (apply) or read (plan) EKS access entries through a cross-account role.
 provider "aws" {
   alias  = "octo-nonlive-eks-access"
   region = "eu-west-2"
   assume_role {
-    role_arn = "arn:aws:iam::${local.environment_management.account_ids["container-platform-octo-nonlive"]}:role/ContainerPlatformEKSAccess"
+    role_arn = "arn:aws:iam::${local.environment_management.account_ids["container-platform-octo-nonlive"]}:role/${local.eks_access_assume_role_name}"
   }
   default_tags { tags = local.tags }
 }
 
-# AWS provider (octo live account): Used to manage EKS access entries through a cross-account role.
+# AWS provider (octo live account): Used to manage (apply) or read (plan) EKS access entries through a cross-account role.
 provider "aws" {
   alias  = "octo-live-eks-access"
   region = "eu-west-2"
   assume_role {
-    role_arn = "arn:aws:iam::${local.environment_management.account_ids["container-platform-octo-live"]}:role/ContainerPlatformEKSAccess"
+    role_arn = "arn:aws:iam::${local.environment_management.account_ids["container-platform-octo-live"]}:role/${local.eks_access_assume_role_name}"
   }
   default_tags { tags = local.tags }
 }
 
-# AWS provider (hmpps nonlive account): Used to manage EKS access entries through a cross-account role.
+# AWS provider (hmpps nonlive account): Used to manage (apply) or read (plan) EKS access entries through a cross-account role.
 provider "aws" {
   alias  = "hmpps-nonlive-eks-access"
   region = "eu-west-2"
   assume_role {
-    role_arn = "arn:aws:iam::${local.environment_management.account_ids["container-platform-hmpps-nonlive"]}:role/ContainerPlatformEKSAccess"
+    role_arn = "arn:aws:iam::${local.environment_management.account_ids["container-platform-hmpps-nonlive"]}:role/${local.eks_access_assume_role_name}"
   }
   default_tags { tags = local.tags }
 }
 
-# AWS provider (hmpps live account): Used to manage EKS access entries through a cross-account role.
+# AWS provider (hmpps live account): Used to manage (apply) or read (plan) EKS access entries through a cross-account role.
 provider "aws" {
   alias  = "hmpps-live-eks-access"
   region = "eu-west-2"
   assume_role {
-    role_arn = "arn:aws:iam::${local.environment_management.account_ids["container-platform-hmpps-live"]}:role/ContainerPlatformEKSAccess"
+    role_arn = "arn:aws:iam::${local.environment_management.account_ids["container-platform-hmpps-live"]}:role/${local.eks_access_assume_role_name}"
   }
   default_tags { tags = local.tags }
 }
 
-# AWS provider (laa nonlive account): Used to manage EKS access entries through a cross-account role.
+# AWS provider (laa nonlive account): Used to manage (apply) or read (plan) EKS access entries through a cross-account role.
 provider "aws" {
   alias  = "laa-nonlive-eks-access"
   region = "eu-west-2"
   assume_role {
-    role_arn = "arn:aws:iam::${local.environment_management.account_ids["container-platform-laa-nonlive"]}:role/ContainerPlatformEKSAccess"
+    role_arn = "arn:aws:iam::${local.environment_management.account_ids["container-platform-laa-nonlive"]}:role/${local.eks_access_assume_role_name}"
   }
   default_tags { tags = local.tags }
 }
 
-# AWS provider (laa live account): Used to manage EKS access entries through a cross-account role.
+# AWS provider (laa live account): Used to manage (apply) or read (plan) EKS access entries through a cross-account role.
 provider "aws" {
   alias  = "laa-live-eks-access"
   region = "eu-west-2"
   assume_role {
-    role_arn = "arn:aws:iam::${local.environment_management.account_ids["container-platform-laa-live"]}:role/ContainerPlatformEKSAccess"
+    role_arn = "arn:aws:iam::${local.environment_management.account_ids["container-platform-laa-live"]}:role/${local.eks_access_assume_role_name}"
   }
   default_tags { tags = local.tags }
 }
 
-# AWS provider (cd nonlive account): Used to manage EKS access entries through a cross-account role.
+# AWS provider (cd nonlive account): Used to manage (apply) or read (plan) EKS access entries through a cross-account role.
 provider "aws" {
   alias  = "cd-nonlive-eks-access"
   region = "eu-west-2"
   assume_role {
-    role_arn = "arn:aws:iam::${local.environment_management.account_ids["container-platform-cd-nonlive"]}:role/ContainerPlatformEKSAccess"
+    role_arn = "arn:aws:iam::${local.environment_management.account_ids["container-platform-cd-nonlive"]}:role/${local.eks_access_assume_role_name}"
   }
   default_tags { tags = local.tags }
 }
 
-# AWS provider (cd live account): Used to manage EKS access entries through a cross-account role.
+# AWS provider (cd live account): Used to manage (apply) or read (plan) EKS access entries through a cross-account role.
 provider "aws" {
   alias  = "cd-live-eks-access"
   region = "eu-west-2"
   assume_role {
-    role_arn = "arn:aws:iam::${local.environment_management.account_ids["container-platform-cd-live"]}:role/ContainerPlatformEKSAccess"
+    role_arn = "arn:aws:iam::${local.environment_management.account_ids["container-platform-cd-live"]}:role/${local.eks_access_assume_role_name}"
   }
   default_tags { tags = local.tags }
 }
