@@ -83,7 +83,7 @@ jobs:
           echo "$matrix"
 
   terraform:
-    needs: discover
+    needs: [get-account-secret, discover]
     if: needs.discover.outputs.has-targets == 'true'
     name: ${{ matrix.bu }} - ${{ matrix.product }} (${{ matrix.environment }}) - ${{ inputs.apply && 'apply' || 'plan' }}
     runs-on: ubuntu-latest
