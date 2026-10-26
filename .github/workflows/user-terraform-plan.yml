@@ -3,8 +3,9 @@ name: User Terraform Plan
 on:
   pull_request:
     paths:
-      - 'namespaces/**/product.yaml'
-      - 'namespaces/**/resources/**'
+      - "namespaces/**/product.yaml"
+      - "namespaces/**/resources/**"
+      - ".github/workflows/**"
 
 permissions:
   contents: read
@@ -19,3 +20,4 @@ jobs:
       apply: false
       base-sha: ${{ github.event.pull_request.base.sha || github.event.before }}
       head-sha: ${{ github.event.pull_request.head.sha || github.sha }}
+
