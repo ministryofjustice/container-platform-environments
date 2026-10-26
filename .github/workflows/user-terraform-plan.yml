@@ -17,6 +17,7 @@ concurrency:
 jobs:
   plan:
     uses: ./.github/workflows/user-terraform-run.yml
+    secrets: inherit
     with:
       apply: false
       base-sha: ${{ github.event.pull_request.base.sha || github.event.before }}
