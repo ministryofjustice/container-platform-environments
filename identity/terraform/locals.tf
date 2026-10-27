@@ -13,6 +13,9 @@ locals {
 
   sso_management_assume_role_name = local.is_identity_apply_role ? "ContainerPlatformSSOAdministrator" : "ContainerPlatformSSOReadOnly"
 
+  # Use the EKS access write role for apply runs and the List/Describe-only role for all other runs.
+  eks_access_assume_role_name = local.is_identity_apply_role ? "ContainerPlatformEKSAccess" : "ContainerPlatformEKSAccessReadOnly"
+
   # Aggregate all product manifests into a single map keyed by product name.
   # New schema: product.yaml with access[] at product level (not per-namespace).
   products = merge([
