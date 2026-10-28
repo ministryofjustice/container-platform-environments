@@ -10,10 +10,12 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
   apply:
     uses: ./.github/workflows/user-terraform-run.yml
+    secrets: inherit
     with:
       apply: true
       base-sha: ${{ github.event.before }}

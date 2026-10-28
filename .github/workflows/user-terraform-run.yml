@@ -20,8 +20,21 @@ permissions:
   contents: read
 
 jobs:
+  get-account-secret:
+    permissions:
+      id-token: write
+    uses: ministryofjustice/cloud-platform-github-workflows/.github/workflows/get-aws-secret.yml@b67e7d66b0c8d739b54ecccd5b0c0da0a8dcfa36 # main
+    with:
+      secret_name: ENVIRONMENT_MANAGEMENT # sets the name for the environment variable in decrypt step
+      secret_arn_ssm_parameter: environment_management_arn # secret arn is available as an ssm param
+    secrets:
+      AWS_ACCOUNT_NUMBER: ${{ secrets.CLOUD_PLATFORM_LIVE_ACCOUNT_ID }}
+      AWS_ROLE_NAME: github-actions-container-platform-identity-secrets-${{ github.event_name == 'push' && 'apply' || 'plan' }}
+      PASSPHRASE: ${{ secrets.PASSPHRASE }}
+
   discover:
     runs-on: ubuntu-latest
+    needs: get-account-secret
     outputs:
       matrix: ${{ steps.environments.outputs.matrix }}
       has-targets: ${{ steps.environments.outputs.has-targets }}
@@ -70,7 +83,7 @@ jobs:
           echo "$matrix"
 
   terraform:
-    needs: discover
+    needs: [get-account-secret, discover]
     if: needs.discover.outputs.has-targets == 'true'
     name: ${{ matrix.bu }} - ${{ matrix.product }} (${{ matrix.environment }}) - ${{ inputs.apply && 'apply' || 'plan' }}
     runs-on: ubuntu-latest
@@ -102,3 +115,29 @@ jobs:
           echo "Namespace: $NAMESPACE"
           echo "Production: $IS_PRODUCTION"
           echo "Backend key: $STATE_KEY"
+
+      - uses: ministryofjustice/cloud-platform-github-workflows/decrypt-secret@b67e7d66b0c8d739b54ecccd5b0c0da0a8dcfa36 # main
+        with:
+          encrypted_secret: ${{ needs.get-account-secret.outputs.encrypted_secret }}
+          passphrase: ${{ secrets.PASSPHRASE }}
+          secret_name: ENVIRONMENT_MANAGEMENT
+
+      # this step can be removed once we have a real step to consume the account ID, it is just for demonstration purposes
+      - name: Look up account ID
+        id: account
+        env:
+          ACCOUNT_NAME: ${{ matrix.cluster }}
+        run: |
+          set -euo pipefail
+          id=$(jq -r --arg n "$ACCOUNT_NAME" '.account_ids[$n] // empty' <<< "$ENVIRONMENT_MANAGEMENT")
+
+          if [ -z "$id" ]; then
+            echo "::error::No account ID found for '$ACCOUNT_NAME'"
+            exit 1
+          fi
+          if [[ ! "$id" =~ ^[0-9]{12}$ ]]; then
+            echo "::error::Account ID for '$ACCOUNT_NAME' is not a 12-digit number"
+            exit 1
+          fi
+
+          echo "Resolved account ID for $ACCOUNT_NAME (${#id} digits)"
