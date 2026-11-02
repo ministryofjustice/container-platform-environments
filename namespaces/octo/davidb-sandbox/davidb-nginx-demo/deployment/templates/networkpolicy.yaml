@@ -1,13 +1,13 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: davidb-nginx-demo-allow-gateway
+  name: davidb-sandbox-nginx-allow-gateway
   labels:
-    app: davidb-nginx-demo
+    app: davidb-sandbox-nginx
 spec:
   podSelector:
     matchLabels:
-      app: davidb-nginx-demo
+      app: davidb-sandbox-nginx
   policyTypes:
     - Ingress
   ingress:

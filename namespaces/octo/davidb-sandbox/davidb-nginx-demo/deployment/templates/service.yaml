@@ -1,12 +1,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: davidb-nginx-demo
+  name: davidb-sandbox-nginx
   labels:
-    app: davidb-nginx-demo
+    app: davidb-sandbox-nginx
 spec:
   selector:
-    app: davidb-nginx-demo
+    app: davidb-sandbox-nginx
   ports:
     - port: {{ .Values.service.port }}
       targetPort: {{ .Values.service.targetPort }}
