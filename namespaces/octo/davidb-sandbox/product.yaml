@@ -8,11 +8,11 @@ owner:
 environments:
   - name: dev
     cluster: container-platform-octo-nonlive
-    namespace: davidb-nginx-demo-dev
+    namespace: davidb-sandbox-dev
     is_production: false
   - name: staging
     cluster: container-platform-octo-nonlive
-    namespace: davidb-nginx-demo-staging
+    namespace: davidb-sandbox-staging
     is_production: false
 
 access:
