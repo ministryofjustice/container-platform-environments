@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: davidb-sandbox-this-is-a-really-really-really-really-really-long-application-name
+  labels:
+    app: davidb-sandbox-this-is-a-really-really-really-really-really-long-application-name
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: davidb-sandbox-this-is-a-really-really-really-really-really-long-application-name
+  template:
+    metadata:
+      labels:
+        app: davidb-sandbox-this-is-a-really-really-really-really-really-long-application-name
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: davidb-sandbox-this-is-a-really-really-really-really-really-long-application-name
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}@{{ .Values.image.digest }}"
+          ports:
+            - containerPort: {{ .Values.service.targetPort }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: {{ .Values.resources.requests.cpu }}
+              memory: {{ .Values.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.resources.limits.cpu }}
+              memory: {{ .Values.resources.limits.memory }}

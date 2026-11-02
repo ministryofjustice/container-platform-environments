@@ -1,0 +1,19 @@
+# Default values for davidb-sandbox. Overridden per environment by values/<tier>/<env>.yaml
+replicaCount: 1
+
+image:
+  repository: nginxinc/nginx-unprivileged
+  tag: "1.27.5"
+  digest: "sha256:f9dfa9c20b2b0b7c5cc830374f22f23dee3f750b6c5291ca7e0330b5c88e6403"
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
+
+service:
+  port: 80
+  targetPort: 8080
