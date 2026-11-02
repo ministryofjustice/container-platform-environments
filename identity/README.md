@@ -11,7 +11,7 @@ It does two things:
 
 The solution is described in the container platform identity architecture diagram:
 
-![Container Platform Identity architecture](https://github.com/ministryofjustice/cloud-platform/blob/main/architecture/container-platform/diagrams/container-platform-Identity.png?raw=true)
+![Container Platform Identity architecture](https://github.com/ministryofjustice/cloud-platform/blob/main/architecture/container-platform/diagrams/identity.drawio.png?raw=true)
 
 Product manifests in `../namespaces/<bu>/<product>/product.yaml` declare access groups and target clusters. Terraform derives the unique teams and cluster combinations, then creates the matching permission sets and EKS access entries.
 
