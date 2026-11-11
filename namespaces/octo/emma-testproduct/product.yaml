@@ -14,3 +14,7 @@ access:
     role: edit
     clusters:
       - container-platform-octo-nonlive
+  - group: test-webops
+    role: view
+    clusters:
+      - container-platform-octo-nonlive
