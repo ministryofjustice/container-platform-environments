@@ -13,6 +13,10 @@ environments:
     cluster: container-platform-octo-nonlive
     namespace: jake-hello-world-staging
     is_production: false
+  - name: uat
+    cluster: container-platform-octo-nonlive
+    namespace: jake-hello-world-uat
+    is_production: false
 access:
   - group: cloud-platform-engineers
     role: edit
