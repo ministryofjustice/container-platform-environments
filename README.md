@@ -11,7 +11,8 @@ This repository is the source of truth for workload namespaces and deployments o
 ```
 container-platform-environments/
 ├── charts/
-│   └── app-baseline/              # Helm chart: Namespace + NetworkPolicy + RoleBindings
+│   ├── app-baseline/              # Helm chart: Namespace + NetworkPolicy + RoleBindings
+│   └── service-starter/           # Shared service chart copied by the generators
 ├── namespaces/
 │   └── <bu>/                      # One directory per Business Unit
 │       └── <product>/             # One directory per product
@@ -80,6 +81,33 @@ Each BU gets separate nonlive and live AppProjects. These enforce:
 | live (workloads) | No (manual sync required) | — | — |
 
 ## Adding a New Product
+
+### Generate a starter product
+
+From this repository, run:
+
+```bash
+./scripts/create-product \
+  --bu octo \
+  --product my-product \
+  --team my-github-team \
+  --slack '#my-team-channel' \
+  --service my-service \
+  --environments dev,prod
+```
+
+Required: `--bu`, `--product`, and `--team` (GitHub team slug).
+
+- `--service`: optionally create a starter service chart; requires Ruby.
+- `--environments`: defaults to `dev`. Only `prod` targets live; all others target nonlive.
+- `--slack`: defaults to `#<team>`; accepts a channel name with or without `#`.
+
+Access defaults to `edit` on nonlive and `view` on live. Review ownership and access, and replace the starter Nginx image with your
+application before merging to `main`. 
+
+Run `./scripts/create-product --help` for usage.
+
+### Create a product manually
 
 1. Create `namespaces/<bu>/<product>/product.yaml`:
 
@@ -175,6 +203,26 @@ The chart validates access declarations at render time:
 
 ## Adding a Service Deployment
 
+### Generate a service for an existing product
+
+```bash
+./scripts/add-service \
+  --bu octo \
+  --product integration-hub-file-transfer \
+  --service my-new-service
+```
+
+Required: `--bu`, `--product`, and `--service`. Requires Ruby, not Helm.
+
+Uses all environments from the existing `product.yaml`. Add `--environments dev,prod`
+to select a subset. Existing services are not overwritten; the product declaration
+is unchanged.
+
+Replace the starter Nginx image and configure the chart before merging to `main`.
+Run `./scripts/add-service --help` for usage.
+
+### Create a service manually
+
 1. Create a Helm chart at `namespaces/<bu>/<product>/<service>/deployment/`
 2. Add per-environment values at `deployment/values/nonlive/dev.yaml` (and/or `staging.yaml`, `prod.yaml`)
 3. Each values file must include a `namespace` key matching the namespace declared in `product.yaml`
@@ -192,6 +240,14 @@ helm plugin install https://github.com/helm-unittest/helm-unittest.git
 
 # Run the tests
 helm unittest ./charts/app-baseline
+```
+
+### Generator tests
+
+Requires Ruby and Minitest. Install Helm to include chart-rendering checks.
+
+```bash
+ruby scripts/tests/create-product_test.rb
 ```
 
 ### Test structure

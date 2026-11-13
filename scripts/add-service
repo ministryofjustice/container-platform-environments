@@ -1,0 +1,101 @@
+#!/usr/bin/env ruby
+require 'fileutils'
+require 'optparse'
+require 'yaml'
+
+def validate_name(label, value)
+  unless value.is_a?(String) && value.match?(/\A[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\z/) && value.length <= 63
+    raise ArgumentError, "#{label} must be a lowercase DNS label of at most 63 characters"
+  end
+end
+
+options = {}
+parser = OptionParser.new do |flags|
+  flags.banner = 'Usage: ./scripts/add-service --bu BU --product PRODUCT --service SERVICE [--environments dev,prod]'
+  flags.separator 'Add a starter chart to an existing product. Requires Ruby, not Helm.'
+  flags.separator 'By default, use all environments and namespaces declared in product.yaml.'
+  flags.on('--bu BU', 'Business unit') { |value| options[:bu] = value }
+  flags.on('--product PRODUCT', 'Existing product') { |value| options[:product] = value }
+  flags.on('--service SERVICE', 'New service') { |value| options[:service] = value }
+  flags.on('--environments LIST', 'Comma-separated subset of declared environments') { |value| options[:environments] = value }
+  flags.on('-h', '--help', 'Show usage') { puts flags; exit }
+end
+
+service_dir = nil
+complete = false
+begin
+  parser.parse!
+  raise ArgumentError, "Unexpected arguments: #{ARGV.join(' ')}" unless ARGV.empty?
+  %i[bu product service].each do |key|
+    raise ArgumentError, "--#{key} is required" unless options.key?(key)
+    validate_name(key.to_s, options[key])
+  end
+  raise ArgumentError, 'Service name resources is reserved' if options[:service] == 'resources'
+
+  repo_root = File.expand_path('..', __dir__)
+  product_dir = File.join(repo_root, 'namespaces', options[:bu], options[:product])
+  product_file = File.join(product_dir, 'product.yaml')
+  raise ArgumentError, "Product declaration not found: #{product_file}" unless File.file?(product_file)
+  declaration = YAML.safe_load(File.read(product_file), permitted_classes: [], permitted_symbols: [], aliases: false)
+  unless declaration.is_a?(Hash) && declaration['product'] == options[:product] && declaration['bu'] == options[:bu]
+    raise ArgumentError, 'Product declaration must match --bu and --product'
+  end
+  environments = declaration['environments']
+  unless environments.is_a?(Array) && !environments.empty?
+    raise ArgumentError, 'Product must declare at least one environment'
+  end
+  names = []
+  environments.each do |environment|
+    raise ArgumentError, 'Each environment must be a mapping' unless environment.is_a?(Hash)
+    validate_name('Environment', environment['name'])
+    validate_name('Namespace', environment['namespace'])
+    raise ArgumentError, "Duplicate environment: #{environment['name']}" if names.include?(environment['name'])
+    names << environment['name']
+    cluster = environment['cluster']
+    unless %w[nonlive live].any? { |tier| cluster == "container-platform-#{options[:bu]}-#{tier}" }
+      raise ArgumentError, "Unsupported cluster for environment #{environment['name']}: #{cluster}"
+    end
+    unless environment['is_production'] == cluster.end_with?('-live')
+      raise ArgumentError, "is_production must match the cluster tier for #{environment['name']}"
+    end
+  end
+  if options.key?(:environments)
+    selected = options[:environments].split(',', -1)
+    selected.each { |name| validate_name('Environment', name) }
+    raise ArgumentError, 'Duplicate requested environment' unless selected.uniq == selected
+    unknown = selected - names
+    raise ArgumentError, "Undeclared environments: #{unknown.join(', ')}" unless unknown.empty?
+    environments = environments.select { |environment| selected.include?(environment['name']) }
+    raise ArgumentError, 'Select at least one environment' if environments.empty?
+  end
+
+  destination = File.join(product_dir, options[:service])
+  if File.exist?(destination) || File.symlink?(destination)
+    raise ArgumentError, "Service already exists: #{destination}"
+  end
+  Dir.mkdir(destination)
+  service_dir = destination
+  deployment = File.join(service_dir, 'deployment')
+  FileUtils.mkdir_p(deployment)
+  FileUtils.cp_r(File.join(repo_root, 'charts/service-starter/.'), deployment)
+  chart_file = File.join(deployment, 'Chart.yaml')
+  chart = YAML.safe_load(File.read(chart_file), permitted_classes: [], permitted_symbols: [], aliases: false)
+  raise ArgumentError, 'Starter Chart.yaml must be a mapping' unless chart.is_a?(Hash)
+  chart['name'] = options[:service]
+  chart['description'] = "Starter chart for #{options[:service]}"
+  File.write(chart_file, YAML.dump(chart))
+  environments.each do |environment|
+    tier = environment['cluster'].end_with?('-live') ? 'live' : 'nonlive'
+    values_dir = File.join(deployment, 'values', tier)
+    FileUtils.mkdir_p(values_dir)
+    File.write(File.join(values_dir, "#{environment['name']}.yaml"), YAML.dump({ 'namespace' => environment['namespace'] }))
+  end
+  complete = true
+  puts "Created namespaces/#{options[:bu]}/#{options[:product]}/#{options[:service]}"
+  puts 'Review the starter image and chart before merging. Nothing has been deployed.'
+rescue StandardError => error
+  warn "Error: #{error.message}"
+  exit 1
+ensure
+  FileUtils.remove_entry(service_dir) if service_dir && !complete
+end
