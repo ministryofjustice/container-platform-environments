@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: welcome-to-octo
+  labels:
+    app: welcome-to-octo
+spec:
+  selector:
+    app: welcome-to-octo
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}
+      protocol: TCP
