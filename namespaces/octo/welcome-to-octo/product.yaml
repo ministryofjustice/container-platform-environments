@@ -1,0 +1,16 @@
+product: welcome-to-octo
+bu: octo
+owner:
+  team: octo
+  slack: "#container-platform-alpha-users"
+  source: https://github.com/ministryofjustice/welcome-to-octo
+environments:
+  - name: dev
+    cluster: container-platform-octo-nonlive
+    namespace: welcome-to-octo-dev
+    is_production: false
+access:
+  - group: octo
+    role: edit
+    clusters:
+      - container-platform-octo-nonlive
