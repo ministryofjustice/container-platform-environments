@@ -1,13 +1,13 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: welcome-to-octo-allow-gateway
+  name: welcome-to-octo-app-allow-gateway
   labels:
-    app: welcome-to-octo
+    app: welcome-to-octo-app
 spec:
   podSelector:
     matchLabels:
-      app: welcome-to-octo
+      app: welcome-to-octo-app
   policyTypes:
     - Ingress
   ingress:

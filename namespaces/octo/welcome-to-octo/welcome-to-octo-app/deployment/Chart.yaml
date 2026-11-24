@@ -1,6 +1,6 @@
 apiVersion: v2
-name: welcome-to-octo
-description: welcome-to-octo service
+name: welcome-to-octo-app
+description: welcome-to-octo-app service
 type: application
 version: 1.0.0
 appVersion: "1.0.0"
