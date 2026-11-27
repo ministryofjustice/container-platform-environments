@@ -10,7 +10,7 @@ environments:
     namespace: welcome-to-octo-dev
     is_production: false
 access:
-  - group: octo
+  - group: integration-hub
     role: edit
     clusters:
       - container-platform-octo-nonlive
